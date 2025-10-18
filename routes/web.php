@@ -10,11 +10,11 @@ use App\Http\Controllers\StageController;
 use App\Http\Controllers\GradeController;
 use App\Http\Controllers\SchoolClassController;
 use App\Http\Controllers\TeacherController;
-use App\Http\Controllers\StudentController;
+use App\Http\Controllers\StudentControllerNew;
 
-Route::get('/', function () {
-    return view('welcome');
-});
+// Route::get('/', function () {
+//     return view('welcome');
+// });
 // مسارات إدارة الأدوار
 Route::resource('roles', RoleController::class);
 Route::patch('roles/{role}/toggle-status', [RoleController::class, 'toggleStatus'])->name('roles.toggle-status');
@@ -27,7 +27,7 @@ Route::patch('users/{user}/permissions', [UserController::class, 'updatePermissi
 
 // لوحة التحكم
 Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
-Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard.page');
 Route::get('/dashboard/chart-data', [DashboardController::class, 'getChartData'])->name('dashboard.chart-data');
 
 // مسارات إدارة المواد الدراسية
@@ -66,9 +66,20 @@ Route::patch('teachers/{teacher}/toggle-status', [TeacherController::class, 'tog
 Route::get('teachers/{teacher}/stats', [TeacherController::class, 'getStats'])->name('teachers.stats');
 
 // مسارات إدارة الطلاب
-Route::resource('students', StudentController::class);
-Route::patch('students/{student}/toggle-status', [StudentController::class, 'toggleStatus'])->name('students.toggle-status');
-Route::patch('students/{student}/change-status', [StudentController::class, 'changeStatus'])->name('students.change-status');
-Route::post('students/import', [StudentController::class, 'import'])->name('students.import');
-Route::get('students/download-template', [StudentController::class, 'downloadImportTemplate'])->name('students.download-template');
-Route::get('students/stats', [StudentController::class, 'getStats'])->name('students.stats');
+Route::resource('students', StudentControllerNew::class);
+Route::patch('students/{student}/toggle-status', [StudentControllerNew::class, 'toggleStatus'])->name('students.toggle-status');
+Route::patch('students/{student}/change-status', [StudentControllerNew::class, 'changeStatus'])->name('students.change-status');
+Route::post('students/import', [StudentControllerNew::class, 'import'])->name('students.import');
+Route::get('students/download-template', [StudentControllerNew::class, 'downloadImportTemplate'])->name('students.download-template');
+Route::get('students/stats', [StudentControllerNew::class, 'getStats'])->name('students.stats');
+
+// مسارات نظام الحضور والغيابة
+Route::get('attendances', [App\Http\Controllers\AttendanceController::class, 'index'])->name('attendances.index');
+Route::get('attendances/class', [App\Http\Controllers\AttendanceController::class, 'showClassAttendanceForm'])->name('attendances.class-form');
+Route::post('attendances/class', [App\Http\Controllers\AttendanceController::class, 'showClassAttendance'])->name('attendances.show-class');
+Route::post('attendances/store', [App\Http\Controllers\AttendanceController::class, 'store'])->name('attendances.store');
+Route::get('attendances/reports', [App\Http\Controllers\AttendanceController::class, 'reports'])->name('attendances.reports');
+Route::post('attendances/show-report', [App\Http\Controllers\AttendanceController::class, 'showReport'])->name('attendances.show-report');
+Route::get('attendances/excuses', [App\Http\Controllers\AttendanceController::class, 'excuses'])->name('attendances.excuses');
+Route::get('attendances/statistics', [App\Http\Controllers\AttendanceController::class, 'statistics'])->name('attendances.statistics');
+Route::patch('attendances/excuses/{excuse}/status', [App\Http\Controllers\AttendanceController::class, 'updateExcuseStatus'])->name('attendances.update-excuse-status');

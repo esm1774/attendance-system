@@ -19,32 +19,18 @@ class Student extends Model
     protected $fillable = [
         'class_id',
         'student_id',
-        'first_name',
-        'middle_name',
-        'last_name',
-        'first_name_ar',
-        'middle_name_ar',
-        'last_name_ar',
+        'full_name',
         'national_id',
         'birth_date',
         'gender',
-        'birth_place',
         'nationality',
-        'religion',
-        'address',
         'phone',
         'email',
         'guardian_name',
         'guardian_relation',
         'guardian_phone',
         'guardian_email',
-        'emergency_phone',
-        'medical_notes',
-        'blood_type',
-        'allergies',
         'enrollment_date',
-        'enrollment_type',
-        'previous_school',
         'is_active',
         'status',
         'notes'
@@ -131,12 +117,7 @@ class Student extends Model
     public function scopeSearch($query, $search)
     {
         return $query->where(function ($q) use ($search) {
-            $q->where('first_name', 'like', "%{$search}%")
-              ->orWhere('middle_name', 'like', "%{$search}%")
-              ->orWhere('last_name', 'like', "%{$search}%")
-              ->orWhere('first_name_ar', 'like', "%{$search}%")
-              ->orWhere('middle_name_ar', 'like', "%{$search}%")
-              ->orWhere('last_name_ar', 'like', "%{$search}%")
+            $q->where('full_name', 'like', "%{$search}%")
               ->orWhere('student_id', 'like', "%{$search}%")
               ->orWhere('national_id', 'like', "%{$search}%")
               ->orWhere('guardian_name', 'like', "%{$search}%")
@@ -149,27 +130,7 @@ class Student extends Model
      */
     public function getFullNameAttribute()
     {
-        $locale = app()->getLocale();
-        if ($locale === 'ar') {
-            return $this->first_name_ar . ' ' . ($this->middle_name_ar ? $this->middle_name_ar . ' ' : '') . $this->last_name_ar;
-        }
-        return $this->first_name . ' ' . ($this->middle_name ? $this->middle_name . ' ' : '') . $this->last_name;
-    }
-
-    /**
-     * الحصول على الاسم الكامل بالإنجليزية
-     */
-    public function getFullNameEnAttribute()
-    {
-        return $this->first_name . ' ' . ($this->middle_name ? $this->middle_name . ' ' : '') . $this->last_name;
-    }
-
-    /**
-     * الحصول على الاسم الكامل بالعربية
-     */
-    public function getFullNameArAttribute()
-    {
-        return $this->first_name_ar . ' ' . ($this->middle_name_ar ? $this->middle_name_ar . ' ' : '') . $this->last_name_ar;
+        return $this->attributes['full_name'] ?? '';
     }
 
     /**
@@ -252,20 +213,7 @@ class Student extends Model
             'name' => $this->guardian_name,
             'relation' => $this->guardian_relation,
             'phone' => $this->guardian_phone,
-            'email' => $this->guardian_email,
-            'emergency_phone' => $this->emergency_phone
-        ];
-    }
-
-    /**
-     * الحصول على المعلومات الطبية
-     */
-    public function getMedicalInfoAttribute(): array
-    {
-        return [
-            'blood_type' => $this->blood_type,
-            'allergies' => $this->allergies,
-            'medical_notes' => $this->medical_notes
+            'email' => $this->guardian_email
         ];
     }
 

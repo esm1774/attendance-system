@@ -245,4 +245,5 @@ public function getFullPathArAttribute(): string
         $currentSubjectIds = $this->subjects()->pluck('subjects.id');
         return Subject::active()->whereNotIn('id', $currentSubjectIds)->get();
     }
+    
 }

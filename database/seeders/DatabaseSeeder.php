@@ -19,6 +19,8 @@ class DatabaseSeeder extends Seeder
             SchoolSeeder::class,
             StageSeeder::class,
             GradeSeeder::class,
+            SchoolClassSeeder::class,
+            StudentSeeder::class,
 
         ]);
     }

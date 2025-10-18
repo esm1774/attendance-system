@@ -103,6 +103,17 @@
                                 <i class="fas fa-book"></i> المواد الدراسية
                             </a>
                         </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="attendanceDropdown" role="button" data-bs-toggle="dropdown">
+                                <i class="fas fa-calendar-check"></i> الحضور والغيابة
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="{{ route('attendances.index') }}"><i class="fas fa-user-check"></i> تسجيل الحضور</a></li>
+                                <li><a class="dropdown-item" href="{{ route('attendances.reports') }}"><i class="fas fa-chart-bar"></i> التقارير</a></li>
+                                <li><a class="dropdown-item" href="{{ route('attendances.excuses') }}"><i class="fas fa-file-medical"></i> الأعذار</a></li>
+                                <li><a class="dropdown-item" href="{{ route('attendances.statistics') }}"><i class="fas fa-chart-pie"></i> الإحصائيات</a></li>
+                            </ul>
+                        </li>
                     </ul>
                     
                     <ul class="navbar-nav">
