@@ -62,23 +62,23 @@
                                     <td>{{ $role->created_at->format('Y-m-d') }}</td>
                                     <td>
                                         <div class="btn-group">
-                                            <a href="{{ route('roles.show', $role) }}" class="btn btn-info btn-sm">
+                                            <a href="{{ route('roles.show', $role) }}" class="btn btn-outline-info btn-sm">
                                                 <i class="fas fa-eye"></i>
                                             </a>
-                                            <a href="{{ route('roles.edit', $role) }}" class="btn btn-primary btn-sm">
+                                            <a href="{{ route('roles.edit', $role) }}" class="btn btn-outline-primary btn-sm">
                                                 <i class="fas fa-edit"></i>
                                             </a>
                                             <form action="{{ route('roles.toggle-status', $role) }}" method="POST" class="d-inline">
                                                 @csrf
                                                 @method('PATCH')
-                                                <button type="submit" class="btn btn-{{ $role->is_active ? 'warning' : 'success' }} btn-sm">
+                                                <button type="submit" class="btn btn-outline-{{ $role->is_active ? 'warning' : 'success' }} btn-sm">
                                                     <i class="fas fa-{{ $role->is_active ? 'pause' : 'play' }}"></i>
                                                 </button>
                                             </form>
                                             <form action="{{ route('roles.destroy', $role) }}" method="POST" class="d-inline">
                                                 @csrf
                                                 @method('DELETE')
-                                                <button type="submit" class="btn btn-danger btn-sm" 
+                                                <button type="submit" class="btn btn-outline-danger btn-sm" 
                                                     onclick="return confirm('هل أنت متأكد من حذف هذا الدور؟')">
                                                     <i class="fas fa-trash"></i>
                                                 </button>
