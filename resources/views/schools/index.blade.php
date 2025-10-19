@@ -97,16 +97,16 @@
                                     <td>{{ $school->created_at->format('Y-m-d') }}</td>
                                     <td>
                                         <div class="btn-group">
-                                            <a href="{{ route('schools.show', $school) }}" class="btn btn-info btn-sm" title="عرض">
+                                            <a href="{{ route('schools.show', $school) }}" class="btn btn-outline-info btn-sm" title="عرض">
                                                 <i class="fas fa-eye"></i>
                                             </a>
-                                            <a href="{{ route('schools.edit', $school) }}" class="btn btn-primary btn-sm" title="تعديل">
+                                            <a href="{{ route('schools.edit', $school) }}" class="btn btn-outline-primary btn-sm" title="تعديل">
                                                 <i class="fas fa-edit"></i>
                                             </a>
                                             <form action="{{ route('schools.toggle-status', $school) }}" method="POST" class="d-inline">
                                                 @csrf
                                                 @method('PATCH')
-                                                <button type="submit" class="btn btn-{{ $school->is_active ? 'warning' : 'success' }} btn-sm" 
+                                                <button type="submit" class="btn btn-outline-{{ $school->is_active ? 'warning' : 'success' }} btn-sm" 
                                                         title="{{ $school->is_active ? 'تعطيل' : 'تفعيل' }}">
                                                     <i class="fas fa-{{ $school->is_active ? 'pause' : 'play' }}"></i>
                                                 </button>
@@ -114,7 +114,7 @@
                                             <form action="{{ route('schools.destroy', $school) }}" method="POST" class="d-inline">
                                                 @csrf
                                                 @method('DELETE')
-                                                <button type="submit" class="btn btn-danger btn-sm" 
+                                                <button type="submit" class="btn btn-outline-danger btn-sm" 
                                                         title="حذف"
                                                         onclick="return confirm('هل أنت متأكد من حذف هذه المدرسة؟')">
                                                     <i class="fas fa-trash"></i>

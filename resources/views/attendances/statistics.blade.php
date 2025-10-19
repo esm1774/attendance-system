@@ -8,7 +8,7 @@
         <div class="col-12">
             <div class="card shadow-sm">
                 <div class="card-header bg-primary">
-                    <h3 class="card-title" style="color: #454242;">
+                    <h3 class="card-title" style="color: #fff;">
                         <i class="fas fa-chart-line ml-2"></i>
                         إحصائيات الحضور والغياب
                     </h3>
@@ -278,7 +278,7 @@
                         <div class="col-12">
                             <div class="card shadow-sm">
                                 <div class="card-header bg-danger text-white">
-                                    <h5 class="mb-0" style="color: #454242;">
+                                    <h5 class="mb-0" style="color: #fff;">
                                         <i class="fas fa-exclamation-triangle ml-2"></i>
                                         الفصول ذات أعلى معدلات الغياب (هذا الشهر)
                                     </h5>
@@ -370,7 +370,7 @@
                         <div class="col-12">
                             <div class="card shadow-sm">
                                 <div class="card-header bg-warning text-white">
-                                    <h5 class="mb-0" style="color: #454242;">
+                                    <h5 class="mb-0" style="color: #fff;">
                                         <i class="fas fa-user-clock ml-2"></i>
                                         الطلاب الأكثر غياباً (هذا الشهر)
                                     </h5>

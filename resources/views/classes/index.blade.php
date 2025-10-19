@@ -142,16 +142,19 @@
         <td>{{ $class->created_at->format('Y-m-d') }}</td>
         <td>
             <div class="btn-group">
-                <a href="{{ route('classes.show', $class) }}" class="btn btn-info btn-sm" title="عرض">
+                <a href="{{ route('classes.show', $class) }}" 
+                class="btn btn-outline-info btn-sm" title="عرض">
                     <i class="fas fa-eye"></i>
                 </a>
-                <a href="{{ route('classes.edit', $class) }}" class="btn btn-primary btn-sm" title="تعديل">
+                <a href="{{ route('classes.edit', $class) }}"                                                
+                class="btn btn-outline-primary" 
+                title="تعديل">
                     <i class="fas fa-edit"></i>
                 </a>
                 <form action="{{ route('classes.toggle-status', $class) }}" method="POST" class="d-inline">
                     @csrf
                     @method('PATCH')
-                    <button type="submit" class="btn btn-{{ $class->is_active ? 'warning' : 'success' }} btn-sm" 
+                    <button type="submit" class="btn btn-outline-{{ $class->is_active ? 'warning' : 'success' }} btn-sm" 
                             title="{{ $class->is_active ? 'تعطيل' : 'تفعيل' }}">
                         <i class="fas fa-{{ $class->is_active ? 'pause' : 'play' }}"></i>
                     </button>
@@ -159,7 +162,7 @@
                 <form action="{{ route('classes.destroy', $class) }}" method="POST" class="d-inline">
                     @csrf
                     @method('DELETE')
-                    <button type="submit" class="btn btn-danger btn-sm" 
+                    <button type="submit" class="btn btn-outline-danger btn-sm" 
                             title="حذف"
                             onclick="return confirm('هل أنت متأكد من حذف هذا الفصل؟')">
                         <i class="fas fa-trash"></i>

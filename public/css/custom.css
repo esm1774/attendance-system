@@ -5,11 +5,11 @@
 
 /* Global Font Family */
 * {
-    font-family: 'Tajawal', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: 'cairo','Tajawal', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 body {
-    font-family: 'Tajawal', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: 'cairo','Tajawal', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 /* ====================================
@@ -95,6 +95,7 @@ body {
 .badge {
     font-weight: 500;
     padding: 0.35em 0.65em;
+    color:#304458 !important;
 }
 
 /* ====================================
