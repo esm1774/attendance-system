@@ -6,309 +6,233 @@ use App\Models\Student;
 use App\Models\SchoolClass;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\Rule;
+use Maatwebsite\Excel\Facades\Excel;
 use App\Imports\StudentsImport;
-use Excel;
+use App\Exports\StudentsTemplateExport;
 
-class StudentControllerNew extends Controller
+class StudentController extends Controller
 {
-    /**
-     * عرض قائمة الطلاب
-     */
     public function index(Request $request)
     {
         $query = Student::with(['class', 'class.grade']);
 
-        // البحث بالاسم أو الرقم
-        if ($request->has('search') && $request->search != '') {
+        if ($request->filled('search')) {
             $query->search($request->search);
         }
 
-        // التصفية حسب الفصل
-        if ($request->has('class_id') && $request->class_id != '') {
+        if ($request->filled('class_id')) {
             $query->where('class_id', $request->class_id);
         }
 
-        // التصفية حسب الجنس
-        if ($request->has('gender') && $request->gender != '') {
+        if ($request->filled('gender')) {
             $query->where('gender', $request->gender);
         }
 
-        // التصفية حسب الحالة
-        if ($request->has('status') && $request->status != '') {
+        if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
 
-        // التصفية حسب النشاط
-        if ($request->has('is_active') && $request->is_active != '') {
+        if ($request->filled('is_active')) {
             $query->where('is_active', $request->is_active == 'active');
         }
 
         $students = $query->latest()->paginate(15);
-        $classes = SchoolClass::active()->with('grade')->get();
+        $classes = SchoolClass::with('grade')->get();
 
         return view('students.index', compact('students', 'classes'));
     }
 
-    /**
-     * عرض نموذج إنشاء طالب جديد
-     */
     public function create()
     {
-        $classes = SchoolClass::active()->with('grade')->get();
-        return view('students.create_simple', compact('classes'));
+        $classes = SchoolClass::with('grade')->get();
+        return view('students.create', compact('classes'));
     }
 
-    /**
-     * تخزين طالب جديد في قاعدة البيانات
-     */
     public function store(Request $request)
     {
         $validated = $request->validate([
             'class_id' => 'required|exists:school_classes,id',
             'full_name' => 'required|string|max:255',
-            'national_id' => 'nullable|string|max:20|unique:students',
-            'birth_date' => 'nullable|date',
+            'national_id' => 'nullable|string|max:20|unique:students,national_id',
+            'birth_date' => 'nullable|date|before:today',
             'gender' => 'nullable|in:male,female',
-            'nationality' => 'nullable|string|max:255',
+            'nationality' => 'nullable|string|max:100',
+            'religion' => 'nullable|string|max:100',
             'phone' => 'nullable|string|max:20',
-            'email' => 'nullable|email|max:255|unique:students',
-
-            // بيانات ولي الأمر
+            'email' => 'nullable|email|max:255|unique:students,email',
             'guardian_name' => 'nullable|string|max:255',
-            'guardian_relation' => 'nullable|string|max:255',
+            'guardian_relation' => 'nullable|string|max:100',
             'guardian_phone' => 'nullable|string|max:20',
             'guardian_email' => 'nullable|email|max:255',
-
-            // معلومات التسجيل
+            'emergency_phone' => 'nullable|string|max:20',
+            'blood_type' => 'nullable|string|max:10',
+            'allergies' => 'nullable|string|max:500',
+            'medical_notes' => 'nullable|string|max:1000',
             'enrollment_date' => 'nullable|date',
-
-            'is_active' => 'boolean',
+            'enrollment_type' => 'nullable|in:new,transferred',
             'status' => 'required|in:active,transferred,graduated,withdrawn',
-            'notes' => 'nullable|string',
+            'notes' => 'nullable|string|max:1000',
+            'is_active' => 'nullable|boolean',
         ]);
 
-        // إنشاء رقم جامعي تلقائي إذا لم يتم تقديمه
-        if (!isset($validated['student_id'])) {
-            $validated['student_id'] = 'STU-' . str_pad(Student::count() + 1, 5, '0', STR_PAD_LEFT);
+        try {
+            DB::beginTransaction();
+
+            $validated['is_active'] = $request->has('is_active') ? 1 : 1; // افتراضياً نشط
+            $validated['status'] = $validated['status'] ?? 'active';
+            $validated['enrollment_date'] = $validated['enrollment_date'] ?? now();
+
+            Student::create($validated);
+
+            DB::commit();
+
+            return redirect()->route('students.index')
+                ->with('success', 'تم إضافة الطالب بنجاح');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            
+            \Log::error('Error creating student: ' . $e->getMessage());
+            
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'حدث خطأ أثناء إضافة الطالب: ' . $e->getMessage());
         }
-
-        DB::transaction(function () use ($validated) {
-            $createData = [
-                'class_id' => $validated['class_id'],
-                'student_id' => $validated['student_id'],
-                'full_name' => $validated['full_name'],
-                'enrollment_date' => $validated['enrollment_date'] ?? now(),
-                'is_active' => $validated['is_active'] ?? true,
-                'status' => $validated['status'] ?? 'active',
-            ];
-            
-            // إضافة الحقول الاختيارية فقط إذا كانت موجودة
-            $optionalFields = [
-                'national_id',
-                'birth_date',
-                'gender',
-                'nationality',
-                'phone',
-                'email',
-                'guardian_name',
-                'guardian_relation',
-                'guardian_phone',
-                'guardian_email',
-                'notes'
-            ];
-            
-            foreach ($optionalFields as $field) {
-                if (isset($validated[$field])) {
-                    $createData[$field] = $validated[$field];
-                }
-            }
-            
-            Student::create($createData);
-        });
-
-        return redirect()->route('students.index')
-            ->with('success', 'تم إنشاء الطالب بنجاح.');
     }
 
-    /**
-     * عرض بيانات طالب معين
-     */
     public function show(Student $student)
     {
         $student->load(['class', 'class.grade']);
         return view('students.show', compact('student'));
     }
 
-    /**
-     * عرض نموذج تعديل بيانات طالب
-     */
     public function edit(Student $student)
     {
-        $classes = SchoolClass::active()->with('grade')->get();
-        return view('students.edit_simple', compact('student', 'classes'));
+        $classes = SchoolClass::with('grade')->get();
+        return view('students.edit', compact('student', 'classes'));
     }
 
-    /**
-     * تحديث بيانات طالب في قاعدة البيانات
-     */
     public function update(Request $request, Student $student)
     {
         $validated = $request->validate([
             'class_id' => 'required|exists:school_classes,id',
             'full_name' => 'required|string|max:255',
             'national_id' => 'nullable|string|max:20|unique:students,national_id,' . $student->id,
-            'birth_date' => 'nullable|date',
+            'birth_date' => 'nullable|date|before:today',
             'gender' => 'nullable|in:male,female',
-            'nationality' => 'nullable|string|max:255',
+            'nationality' => 'nullable|string|max:100',
+            'religion' => 'nullable|string|max:100',
             'phone' => 'nullable|string|max:20',
             'email' => 'nullable|email|max:255|unique:students,email,' . $student->id,
-
-            // بيانات ولي الأمر
             'guardian_name' => 'nullable|string|max:255',
-            'guardian_relation' => 'nullable|string|max:255',
+            'guardian_relation' => 'nullable|string|max:100',
             'guardian_phone' => 'nullable|string|max:20',
             'guardian_email' => 'nullable|email|max:255',
-
-            // معلومات التسجيل
+            'emergency_phone' => 'nullable|string|max:20',
+            'blood_type' => 'nullable|string|max:10',
+            'allergies' => 'nullable|string|max:500',
+            'medical_notes' => 'nullable|string|max:1000',
             'enrollment_date' => 'nullable|date',
-
-            'is_active' => 'boolean',
+            'enrollment_type' => 'nullable|in:new,transferred',
             'status' => 'required|in:active,transferred,graduated,withdrawn',
-            'notes' => 'nullable|string',
+            'notes' => 'nullable|string|max:1000',
+            'is_active' => 'nullable|boolean',
         ]);
 
-        DB::transaction(function () use ($validated, $student) {
-            $updateData = [
-                'class_id' => $validated['class_id'],
-                'full_name' => $validated['full_name'],
-                'is_active' => $validated['is_active'] ?? true,
-                'status' => $validated['status'],
-            ];
-            
-            // إضافة الحقول الاختيارية فقط إذا كانت موجودة
-            $optionalFields = [
-                'national_id',
-                'birth_date',
-                'gender',
-                'nationality',
-                'phone',
-                'email',
-                'guardian_name',
-                'guardian_relation',
-                'guardian_phone',
-                'guardian_email',
-                'enrollment_date',
-                'notes'
-            ];
-            
-            foreach ($optionalFields as $field) {
-                if (isset($validated[$field])) {
-                    $updateData[$field] = $validated[$field];
-                }
-            }
-            
-            $student->update($updateData);
-        });
+        try {
+            DB::beginTransaction();
 
-        return redirect()->route('students.index')
-            ->with('success', 'تم تحديث بيانات الطالب بنجاح.');
+            $validated['is_active'] = $request->has('is_active') ? 1 : 0;
+
+            $student->update($validated);
+
+            DB::commit();
+
+            return redirect()->route('students.index')
+                ->with('success', 'تم تحديث بيانات الطالب بنجاح');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            
+            \Log::error('Error updating student: ' . $e->getMessage());
+            
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'حدث خطأ أثناء تحديث بيانات الطالب: ' . $e->getMessage());
+        }
     }
 
-    /**
-     * حذف طالب من قاعدة البيانات
-     */
     public function destroy(Student $student)
     {
         try {
             $student->delete();
+            
             return redirect()->route('students.index')
-                ->with('success', 'تم حذف الطالب بنجاح.');
+                ->with('success', 'تم حذف الطالب بنجاح');
+                
         } catch (\Exception $e) {
+            \Log::error('Error deleting student: ' . $e->getMessage());
+            
             return redirect()->route('students.index')
-                ->with('error', 'لا يمكن حذف الطالب لوجود سجلات مرتبطة به.');
+                ->with('error', 'لا يمكن حذف الطالب لوجود سجلات مرتبطة به');
         }
     }
 
-    /**
-     * تبديل حالة نشاط الطالب
-     */
     public function toggleStatus(Student $student)
     {
-        $student->update(['is_active' => !$student->is_active]);
+        try {
+            $student->update(['is_active' => !$student->is_active]);
 
-        $status = $student->is_active ? 'تفعيل' : 'تعطيل';
-        return redirect()->back()
-            ->with('success', "تم {$status} الطالب بنجاح.");
+            $status = $student->is_active ? 'تفعيل' : 'تعطيل';
+            
+            return redirect()->back()
+                ->with('success', "تم {$status} الطالب بنجاح");
+                
+        } catch (\Exception $e) {
+            return redirect()->back()
+                ->with('error', 'حدث خطأ أثناء تغيير حالة الطالب');
+        }
     }
 
-    /**
-     * تغيير حالة الطالب
-     */
-    public function changeStatus(Request $request, Student $student)
-    {
-        $validated = $request->validate([
-            'status' => 'required|in:active,transferred,graduated,withdrawn',
-            'notes' => 'nullable|string',
-        ]);
-
-        $student->update([
-            'status' => $validated['status'],
-            'notes' => $validated['notes'] ?? $student->notes,
-        ]);
-
-        return redirect()->back()
-            ->with('success', 'تم تغيير حالة الطالب بنجاح.');
-    }
-
-    /**
-     * استيراد الطلاب من ملف Excel
-     */
     public function import(Request $request)
     {
         $request->validate([
-            'file' => 'required|mimes:xlsx,xls,csv|max:10240', // 10MB
+            'file' => 'required|file|mimes:xlsx,xls,csv|max:10240',
+        ], [
+            'file.required' => 'يرجى اختيار ملف للاستيراد',
+            'file.mimes' => 'يجب أن يكون الملف بصيغة Excel (xlsx, xls) أو CSV',
+            'file.max' => 'حجم الملف يجب أن لا يتجاوز 10 ميجابايت',
         ]);
 
         try {
+            DB::beginTransaction();
+            
             Excel::import(new StudentsImport, $request->file('file'));
-            return redirect()->back()
-                ->with('success', 'تم استيراد الطلاب بنجاح.');
+            
+            DB::commit();
+            
+            return redirect()->route('students.index')
+                ->with('success', 'تم استيراد الطلاب بنجاح');
+                
         } catch (\Exception $e) {
+            DB::rollBack();
+            
+            \Log::error('Error importing students: ' . $e->getMessage());
+            
             return redirect()->back()
                 ->with('error', 'حدث خطأ أثناء استيراد الطلاب: ' . $e->getMessage());
         }
     }
 
-    /**
-     * تنزيل قالب استيراد الطلاب
-     */
-    public function downloadImportTemplate()
+    public function downloadTemplate()
     {
-        return Excel::download(new \App\Exports\StudentsTemplateExport, 'students_template.xlsx');
-    }
-
-    /**
-     * الحصول على إحصائيات الطلاب
-     */
-    public function getStats()
-    {
-        $stats = [
-            'total' => Student::count(),
-            'active' => Student::where('is_active', true)->count(),
-            'inactive' => Student::where('is_active', false)->count(),
-            'by_status' => [
-                'active' => Student::where('status', 'active')->count(),
-                'transferred' => Student::where('status', 'transferred')->count(),
-                'graduated' => Student::where('status', 'graduated')->count(),
-                'withdrawn' => Student::where('status', 'withdrawn')->count(),
-            ],
-            'by_gender' => [
-                'male' => Student::where('gender', 'male')->count(),
-                'female' => Student::where('gender', 'female')->count(),
-            ],
-        ];
-
-        return response()->json($stats);
+        try {
+            return Excel::download(new StudentsTemplateExport, 'students_template.xlsx');
+        } catch (\Exception $e) {
+            \Log::error('Error downloading template: ' . $e->getMessage());
+            
+            return redirect()->back()
+                ->with('error', 'حدث خطأ أثناء تحميل النموذج: ' . $e->getMessage());
+        }
     }
 }
