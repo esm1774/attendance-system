@@ -132,11 +132,20 @@
                             </tbody>
                         </table>
                     </div>
-
-                    <!-- الترقيم -->
-                    <div class="d-flex justify-content-center mt-4">
-                        {{ $subjects->links() }}
+                        <!-- الترقيم المحسّن -->
+                    @if($subjects->hasPages())
+                    <div class="d-flex justify-content-between align-items-center mt-4">
+                        <div>
+                            <small class="text-muted">
+                                الصفحة {{ $subjects->currentPage() }} من {{ $subjects->lastPage() }}
+                            </small>
+                        </div>
+                        <nav aria-label="التنقل بين الصفحات">
+                            {{ $subjects->links('pagination::bootstrap-5') }}
+                        </nav>
                     </div>
+                    @endif
+
                 </div>
             </div>
         </div>

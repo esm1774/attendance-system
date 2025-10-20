@@ -58,7 +58,7 @@
                     </form>
 
                     <div class="table-responsive">
-                        <table class="table table-btable table-hover">
+                        <table class="table table-btable table-hover text-center">
                             <thead>
                                 <tr>
                                     <th>#</th>
@@ -128,10 +128,19 @@
                         </table>
                     </div>
 
-                    <!-- الترقيم -->
-                    <div class="d-flex justify-content-center mt-4">
-                        {{ $schools->links() }}
+                        <!-- الترقيم المحسّن -->
+                    @if($schools->hasPages())
+                    <div class="d-flex justify-content-between align-items-center mt-4">
+                        <div>
+                            <small class="text-muted">
+                                الصفحة {{ $schools->currentPage() }} من {{ $schools->lastPage() }}
+                            </small>
+                        </div>
+                        <nav aria-label="التنقل بين الصفحات">
+                            {{ $schools->links('pagination::bootstrap-5') }}
+                        </nav>
                     </div>
+                    @endif
                 </div>
             </div>
         </div>

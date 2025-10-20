@@ -141,10 +141,20 @@
                         </table>
                     </div>
 
-                    <!-- الترقيم -->
-                    <div class="d-flex justify-content-center mt-4">
-                        {{ $stages->links() }}
+                        <!-- الترقيم المحسّن -->
+                    @if($stages->hasPages())
+                    <div class="d-flex justify-content-between align-items-center mt-4">
+                        <div>
+                            <small class="text-muted">
+                                الصفحة {{ $stages->currentPage() }} من {{ $stages->lastPage() }}
+                            </small>
+                        </div>
+                        <nav aria-label="التنقل بين الصفحات">
+                            {{ $stages->links('pagination::bootstrap-5') }}
+                        </nav>
                     </div>
+                    @endif
+
                 </div>
             </div>
         </div>

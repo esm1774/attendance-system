@@ -150,10 +150,19 @@
                         </table>
                     </div>
 
-                    <!-- الترقيم -->
-                    <div class="d-flex justify-content-center mt-4">
-                        {{ $users->links() }}
+                        <!-- الترقيم المحسّن -->
+                    @if($users->hasPages())
+                    <div class="d-flex justify-content-between align-items-center mt-4">
+                        <div>
+                            <small class="text-muted">
+                                الصفحة {{ $users->currentPage() }} من {{ $users->lastPage() }}
+                            </small>
+                        </div>
+                        <nav aria-label="التنقل بين الصفحات">
+                            {{ $users->links('pagination::bootstrap-5') }}
+                        </nav>
                     </div>
+                    @endif
                 </div>
             </div>
         </div>

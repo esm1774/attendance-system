@@ -141,12 +141,22 @@
                                 @endforeach
                             </tbody>
                         </table>
+                    
                     </div>
 
-                    <!-- الترقيم -->
-                    <div class="d-flex justify-content-center mt-4">
-                        {{ $grades->links() }}
+                        <!-- الترقيم المحسّن -->
+                    @if($grades->hasPages())
+                    <div class="d-flex justify-content-between align-items-center mt-4">
+                        <div>
+                            <small class="text-muted">
+                                الصفحة {{ $grades->currentPage() }} من {{ $grades->lastPage() }}
+                            </small>
+                        </div>
+                        <nav aria-label="التنقل بين الصفحات">
+                            {{ $grades->links('pagination::bootstrap-5') }}
+                        </nav>
                     </div>
+                    @endif
                 </div>
             </div>
         </div>

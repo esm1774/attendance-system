@@ -12,15 +12,16 @@
                         <i class="fas fa-user-graduate ml-2"></i>
                         قائمة الطلاب
                     </h3>
-                    <div class="btn-group">
-                        <a href="{{ route('students.create') }}" class="btn btn-light btn-sm">
-                            <i class="fas fa-plus ml-1"></i> إضافة طالب
+                    <div>
+                        
+                        <a href="{{ route('students.create') }}" class="btn btn-primary btn-sm">
+                        <i class="fas fa-plus ml-2"></i> إضافة طالب
                         </a>
                         <a href="{{ route('students.download-template') }}" class="btn btn-success btn-sm">
-                            <i class="fas fa-download ml-1"></i> تحميل نموذج
+                            <i class="fas fa-download ml-2"></i> تحميل نموذج
                         </a>
                         <button type="button" class="btn btn-info btn-sm" data-bs-toggle="modal" data-bs-target="#importModal">
-                            <i class="fas fa-upload ml-1"></i> استيراد طلاب
+                            <i class="fas fa-upload ml-2"></i> استيراد طلاب
                         </button>
                     </div>
                 </div>
@@ -48,20 +49,16 @@
                                 <div class="row g-3">
                                     <div class="col-md-3">
                                         <div class="form-group">
-                                            <label class="form-label small mb-1">
-                                                <i class="fas fa-search ml-1"></i> بحث
-                                            </label>
-                                            <input type="text" name="search" class="form-control form-control-sm" 
+                                            
+                                            <input type="text" name="search" class="form-control" 
                                                    placeholder="ابحث بالاسم أو الرقم" 
                                                    value="{{ request('search') }}">
                                         </div>
                                     </div>
                                     <div class="col-md-2">
                                         <div class="form-group">
-                                            <label class="form-label small mb-1">
-                                                <i class="fas fa-door-open ml-1"></i> الفصل
-                                            </label>
-                                            <select name="class_id" class="form-select form-select-sm">
+                                           
+                                            <select name="class_id" class="form-control">
                                                 <option value="">جميع الفصول</option>
                                                 @foreach($classes as $class)
                                                     <option value="{{ $class->id }}" 
@@ -74,10 +71,8 @@
                                     </div>
                                     <div class="col-md-2">
                                         <div class="form-group">
-                                            <label class="form-label small mb-1">
-                                                <i class="fas fa-venus-mars ml-1"></i> الجنس
-                                            </label>
-                                            <select name="gender" class="form-select form-select-sm">
+                                            
+                                            <select name="gender" class="form-control">
                                                 <option value="">جميع الجنسين</option>
                                                 <option value="male" {{ request('gender') == 'male' ? 'selected' : '' }}>ذكر</option>
                                                 <option value="female" {{ request('gender') == 'female' ? 'selected' : '' }}>أنثى</option>
@@ -86,10 +81,8 @@
                                     </div>
                                     <div class="col-md-2">
                                         <div class="form-group">
-                                            <label class="form-label small mb-1">
-                                                <i class="fas fa-flag ml-1"></i> الحالة
-                                            </label>
-                                            <select name="status" class="form-select form-select-sm">
+                                            
+                                            <select name="status" class="form-control">
                                                 <option value="">جميع الحالات</option>
                                                 <option value="active" {{ request('status') == 'active' ? 'selected' : '' }}>نشط</option>
                                                 <option value="transferred" {{ request('status') == 'transferred' ? 'selected' : '' }}>منقول</option>
@@ -100,10 +93,8 @@
                                     </div>
                                     <div class="col-md-2">
                                         <div class="form-group">
-                                            <label class="form-label small mb-1">
-                                                <i class="fas fa-toggle-on ml-1"></i> النشاط
-                                            </label>
-                                            <select name="is_active" class="form-select form-select-sm">
+                                            
+                                            <select name="is_active" class="form-control">
                                                 <option value="">الكل</option>
                                                 <option value="active" {{ request('is_active') == 'active' ? 'selected' : '' }}>نشط</option>
                                                 <option value="inactive" {{ request('is_active') == 'inactive' ? 'selected' : '' }}>غير نشط</option>
@@ -111,9 +102,8 @@
                                         </div>
                                     </div>
                                     <div class="col-md-1">
-                                        <label class="form-label small mb-1">&nbsp;</label>
-                                        <button type="submit" class="btn btn-primary btn-sm w-100">
-                                            <i class="fas fa-search"></i>
+                                        <button type="submit" class="btn btn-info align-middle w-100 h-100">
+                                            <i class="fas fa-search"></i> بحث
                                         </button>
                                     </div>
                                 </div>
@@ -135,13 +125,14 @@
                     </div>
 
                     <div class="table-responsive">
-                        <table class="table table-hover table-striped align-middle" id="studentsTable">
+                        <table class="table table-hover table-striped align-middle text-center" id="studentsTable">
                             <thead>
                                 <tr>
                                     <th style="width: 50px;" class="text-center">#</th>
                                     <th style="width: 60px;" class="text-center">الصورة</th>
                                     <th style="width: 120px;">الرقم الجامعي</th>
                                     <th>الاسم الكامل</th>
+                                    <th>الهوية الوطنية</th>
                                     <th style="width: 150px;">الفصل</th>
                                     <th style="width: 80px;" class="text-center">الجنس</th>
                                     <th style="width: 80px;" class="text-center">العمر</th>
@@ -166,9 +157,12 @@
                                     </td>
                                     <td>
                                         <strong>{{ $student->full_name }}</strong>
+                                      
+                                    </td>
+                                    <td>
+                                       
                                         @if($student->national_id)
-                                            <br><small class="text-muted">
-                                                <i class="fas fa-id-card ml-1"></i>{{ $student->national_id }}
+                                                {{ $student->national_id }}
                                             </small>
                                         @endif
                                     </td>

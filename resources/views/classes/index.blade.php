@@ -177,10 +177,19 @@
                         </table>
                     </div>
 
-                    <!-- الترقيم -->
-                    <div class="d-flex justify-content-center mt-4">
-                    {{ $classes->links() }}
+                    <!-- الترقيم المحسّن -->
+                    @if($classes->hasPages())
+                    <div class="d-flex justify-content-between align-items-center mt-4">
+                        <div>
+                            <small class="text-muted">
+                                الصفحة {{ $classes->currentPage() }} من {{ $classes->lastPage() }}
+                            </small>
+                        </div>
+                        <nav aria-label="التنقل بين الصفحات">
+                            {{ $classes->links('pagination::bootstrap-5') }}
+                        </nav>
                     </div>
+                    @endif
                 </div>
             </div>
         </div>

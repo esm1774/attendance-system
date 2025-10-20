@@ -92,10 +92,10 @@
                         </div>
                         <div class="row">
                             <div class="col-12">
-                                <button type="submit" class="btn btn-primary btn-lg">
+                                <button type="submit" class="btn btn-primary btn-lg mt-2">
                                     <i class="fas fa-search ml-1"></i> عرض التقرير
                                 </button>
-                                <button type="reset" class="btn btn-secondary btn-lg">
+                                <button type="reset" class="btn btn-secondary btn-lg mt-2">
                                     <i class="fas fa-redo ml-1"></i> إعادة تعيين
                                 </button>
                             </div>
