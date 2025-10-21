@@ -7,92 +7,114 @@ use App\Models\SchoolClass;
 use Maatwebsite\Excel\Concerns\ToModel;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use Maatwebsite\Excel\Concerns\WithValidation;
-use Illuminate\Support\Str;
+use Maatwebsite\Excel\Concerns\SkipsOnError;
+use Maatwebsite\Excel\Concerns\SkipsErrors;
+use Illuminate\Support\Facades\Log;
 
-class StudentsImport implements ToModel, WithHeadingRow, WithValidation
+class StudentsImport implements 
+    ToModel, 
+    WithHeadingRow, 
+    WithValidation,
+    SkipsOnError
 {
+    use SkipsErrors;
+
     /**
-     * @param array $row
-     *
-     * @return \App\Models\Student|null
+     * تحويل كل صف إلى نموذج Student
      */
     public function model(array $row)
     {
-        // البحث عن الفصل الدراسي
-        $class = null;
-        if (!empty($row['class_name'])) {
-            $class = SchoolClass::where('name_ar', 'like', '%' . $row['class_name'] . '%')
-                ->orWhere('name', 'like', '%' . $row['class_name'] . '%')
-                ->first();
-        }
+        // البحث عن الفصل
+        $class = SchoolClass::where('name_ar', $row['asm_alfsl'])
+            ->orWhere('name', $row['asm_alfsl'])
+            ->first();
 
-        // إذا لم يتم العثور على الفصل، استخدام الفصل الأول
         if (!$class) {
-            $class = SchoolClass::first();
+            Log::warning('Class not found: ' . $row['asm_alfsl']);
+            return null;
         }
 
-        // إنشاء رقم جامعي تلقائي إذا لم يتم تقديمه
-        $studentId = !empty($row['student_id']) ? $row['student_id'] : 'STU-' . str_pad(Student::count() + 1, 5, '0', STR_PAD_LEFT);
+        // التحقق من عدم وجود رقم هوية مكرر
+        if (!empty($row['alhoy_alotny']) && Student::where('national_id', $row['alhoy_alotny'])->exists()) {
+            Log::warning('Duplicate national_id: ' . $row['alhoy_alotny']);
+            return null;
+        }
+
+        // تحويل الجنس
+        $gender = null;
+        if (!empty($row['algns'])) {
+            $genderText = trim($row['algns']);
+            if (in_array($genderText, ['ذكر', 'male', 'Male', 'MALE'])) {
+                $gender = 'male';
+            } elseif (in_array($genderText, ['أنثى', 'انثى', 'female', 'Female', 'FEMALE'])) {
+                $gender = 'female';
+            }
+        }
+
+        // تحويل الحالة
+        $status = 'active';
+        if (!empty($row['alhal'])) {
+            $statusText = trim($row['alhal']);
+            if (in_array($statusText, ['نشط', 'active'])) {
+                $status = 'active';
+            } elseif (in_array($statusText, ['منقول', 'transferred'])) {
+                $status = 'transferred';
+            } elseif (in_array($statusText, ['متخرج', 'graduated'])) {
+                $status = 'graduated';
+            } elseif (in_array($statusText, ['منسحب', 'withdrawn'])) {
+                $status = 'withdrawn';
+            }
+        }
 
         return new Student([
-            'class_id' => $class ? $class->id : null,
-            'student_id' => $studentId,
-            'full_name' => $row['full_name'],
-            'identity_number' => $row['identity_number'] ?? null,
-            'birth_date' => !empty($row['birth_date']) ? date('Y-m-d', strtotime($row['birth_date'])) : null,
-            'gender' => $row['gender'] ?? null,
-            'nationality' => $row['nationality'] ?? null,
-            'phone' => $row['phone'] ?? null,
-            'email' => $row['email'] ?? null,
-            'guardian_name' => $row['guardian_name'] ?? null,
-            'guardian_relation' => $row['guardian_relation'] ?? null,
-            'guardian_phone' => $row['guardian_phone'] ?? null,
-            'guardian_email' => $row['guardian_email'] ?? null,
-            'enrollment_date' => !empty($row['enrollment_date']) ? date('Y-m-d', strtotime($row['enrollment_date'])) : now(),
-            'is_active' => true,
-            'status' => 'active',
-            'notes' => $row['notes'] ?? null,
+            'class_id' => $class->id,
+            'full_name' => $row['asm_altalb'],
+            'national_id' => $row['alhoy_alotny'] ?? null,
+            'birth_date' => !empty($row['tarykh_almylad']) ? $row['tarykh_almylad'] : null,
+            'gender' => $gender,
+            'nationality' => $row['algnsy'] ?? 'سعودي',
+            'phone' => $row['rqm_algoal'] ?? null,
+            'email' => $row['albr الإلكتروني'] ?? null,
+            'guardian_name' => $row['asm_oly_alamr'] ?? null,
+            'guardian_relation' => $row['sl_oly_alamr_alاب'] ?? 'الأب',
+            'guardian_phone' => $row['rqm_goal_oly_alamr'] ?? null,
+            'guardian_email' => $row['aymyl_oly_alamr'] ?? null,
+            'enrollment_date' => !empty($row['tarykh_altsgyl']) ? $row['tarykh_altsgyl'] : now(),
+            'status' => $status,
+            'notes' => $row['mlahthat'] ?? null,
+            'is_active' => !empty($row['is_active']) ? (int)$row['is_active'] : 1,
         ]);
     }
 
     /**
-     * قواعد التحقق من البيانات
-     *
-     * @return array
+     * قواعد التحقق
      */
     public function rules(): array
     {
         return [
-            'full_name' => 'required|string|max:255',
-            'class_name' => 'required|string|max:255',
-            'identity_number' => 'nullable|string|max:20|unique:students,identity_number',
-            'birth_date' => 'nullable|date',
-            'gender' => 'nullable|in:male,female,ذكر,أنثى',
-            'nationality' => 'nullable|string|max:255',
-            'phone' => 'nullable|string|max:20',
-            'email' => 'nullable|email|max:255|unique:students,email',
-            'guardian_name' => 'nullable|string|max:255',
-            'guardian_relation' => 'nullable|string|max:255',
-            'guardian_phone' => 'nullable|string|max:20',
-            'guardian_email' => 'nullable|email|max:255',
-            'enrollment_date' => 'nullable|date',
-            'notes' => 'nullable|string',
+            'asm_alfsl' => 'required',
+            'asm_altalb' => 'required',
+            'alhoy_alotny' => 'nullable|unique:students,national_id',
         ];
     }
 
     /**
-     * رسائل الخطأ المخصصة
-     *
-     * @return array
+     * رسائل الخطأ
      */
     public function customValidationMessages()
     {
         return [
-            'full_name.required' => 'حقل اسم الطالب مطلوب',
-            'class_name.required' => 'حقل اسم الفصل مطلوب',
-            'identity_number.unique' => 'رقم الهوية موجود بالفعل',
-            'email.unique' => 'البريد الإلكتروني موجود بالفعل',
-            'gender.in' => 'قيمة الجنس غير صالحة',
+            'asm_alfsl.required' => 'اسم الفصل مطلوب',
+            'asm_altalb.required' => 'اسم الطالب مطلوب',
+            'alhoy_alotny.unique' => 'الهوية الوطنية موجودة مسبقاً',
         ];
+    }
+
+    /**
+     * رقم صف العناوين
+     */
+    public function headingRow(): int
+    {
+        return 1;
     }
 }

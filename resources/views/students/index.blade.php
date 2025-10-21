@@ -102,7 +102,7 @@
                                         </div>
                                     </div>
                                     <div class="col-md-1">
-                                        <button type="submit" class="btn btn-info align-middle w-100 h-100">
+                                        <button type="submit" class="btn btn-info align-middle w- h-100">
                                             <i class="fas fa-search"></i> بحث
                                         </button>
                                     </div>
@@ -130,14 +130,10 @@
                                 <tr>
                                     <th style="width: 50px;" class="text-center">#</th>
                                     <th style="width: 60px;" class="text-center">الصورة</th>
-                                    <th style="width: 120px;">الرقم الجامعي</th>
-                                    <th>الاسم الكامل</th>
                                     <th>الهوية الوطنية</th>
+                                    <th>الاسم الكامل</th>
                                     <th style="width: 150px;">الفصل</th>
-                                    <th style="width: 80px;" class="text-center">الجنس</th>
-                                    <th style="width: 80px;" class="text-center">العمر</th>
                                     <th style="width: 100px;" class="text-center">الحالة</th>
-                                    <th style="width: 100px;" class="text-center">النشاط</th>
                                     <th style="width: 180px;" class="text-center">الإجراءات</th>
                                 </tr>
                             </thead>
@@ -153,13 +149,6 @@
                                         </div>
                                     </td>
                                     <td>
-                                        <span class="badge bg-secondary">{{ $student->student_id }}</span>
-                                    </td>
-                                    <td>
-                                        <strong>{{ $student->full_name }}</strong>
-                                      
-                                    </td>
-                                    <td>
                                        
                                         @if($student->national_id)
                                                 {{ $student->national_id }}
@@ -167,26 +156,22 @@
                                         @endif
                                     </td>
                                     <td>
+                                        <strong>{{ $student->full_name }}</strong>
+                                      
+                                    </td>
+
+                                    <td>
                                         <span class="badge bg-info text-white">
                                             {{ $student->class->grade->name_ar }} - {{ $student->class->name_ar }}
                                         </span>
                                     </td>
-                                    <td class="text-center">
-                                        <span class="badge bg-light text-dark">{{ $student->gender_text }}</span>
-                                    </td>
-                                    <td class="text-center">
-                                        <small>{{ $student->age }} سنة</small>
-                                    </td>
+                                    
                                     <td class="text-center">
                                         <span class="badge bg-{{ $student->status_color }}">
                                             {{ $student->status_text }}
                                         </span>
                                     </td>
-                                    <td class="text-center">
-                                        <span class="badge bg-{{ $student->is_active ? 'success' : 'danger' }}">
-                                            {{ $student->is_active ? 'نشط' : 'غير نشط' }}
-                                        </span>
-                                    </td>
+                                 
                                     <td class="text-center">
                                         <div class="btn-group btn-group-sm" role="group">
                                             <a href="{{ route('students.show', $student) }}" 

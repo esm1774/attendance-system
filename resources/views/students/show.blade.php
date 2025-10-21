@@ -54,7 +54,12 @@
                                         </tr>
                                         <tr>
                                             <th>تاريخ الميلاد:</th>
-                                            <td>{{ $student->birth_date->format('Y-m-d') }} ({{ $student->age }} سنة)</td>
+                                            <td>
+                                                {{ optional($student->birth_date)->format('Y-m-d') ?? 'غير محدد' }}
+                                                @if($student->birth_date)
+                                                    ({{ $student->age }} سنة)
+                                                @endif
+                                            </td>
                                         </tr>
                                         <tr>
                                             <th>مكان الميلاد:</th>
@@ -74,7 +79,7 @@
                                     <table class="table table-bordered">
                                         <tr>
                                             <th width="40%">تاريخ التسجيل:</th>
-                                            <td>{{ $student->enrollment_date->format('Y-m-d') }}</td>
+                                            <td>{{ optional($student->enrollment_date)->format('Y-m-d') ?? 'غير محدد' }}</td>
                                         </tr>
                                         <tr>
                                             <th>نوع التسجيل:</th>

@@ -6,18 +6,30 @@ use App\Models\Student;
 use App\Models\SchoolClass;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Maatwebsite\Excel\Facades\Excel;
+use Maatwebsite\Excel\Facades\Excel; // ✅ تصحيح المسار
 use App\Imports\StudentsImport;
 use App\Exports\StudentsTemplateExport;
+use Illuminate\Support\Facades\Response;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
-class StudentController extends Controller
+class StudentControllerNew extends Controller
 {
+    /**
+     * عرض قائمة الطلاب مع خيارات البحث والتصفية
+     */
     public function index(Request $request)
     {
         $query = Student::with(['class', 'class.grade']);
 
         if ($request->filled('search')) {
-            $query->search($request->search);
+            $query->where(function ($q) use ($request) {
+                $q->where('full_name', 'like', "%{$request->search}%")
+                  ->orWhere('national_id', 'like', "%{$request->search}%")
+                  ->orWhere('email', 'like', "%{$request->search}%")
+                  ->orWhere('phone', 'like', "%{$request->search}%");
+            });
         }
 
         if ($request->filled('class_id')) {
@@ -42,12 +54,18 @@ class StudentController extends Controller
         return view('students.index', compact('students', 'classes'));
     }
 
+    /**
+     * صفحة إضافة طالب جديد
+     */
     public function create()
     {
         $classes = SchoolClass::with('grade')->get();
         return view('students.create', compact('classes'));
     }
 
+    /**
+     * تخزين بيانات الطالب الجديد
+     */
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -91,27 +109,36 @@ class StudentController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
-            
+
             \Log::error('Error creating student: ' . $e->getMessage());
-            
+
             return redirect()->back()
                 ->withInput()
                 ->with('error', 'حدث خطأ أثناء إضافة الطالب: ' . $e->getMessage());
         }
     }
 
+    /**
+     * عرض تفاصيل الطالب
+     */
     public function show(Student $student)
     {
         $student->load(['class', 'class.grade']);
         return view('students.show', compact('student'));
     }
 
+    /**
+     * صفحة تعديل بيانات الطالب
+     */
     public function edit(Student $student)
     {
         $classes = SchoolClass::with('grade')->get();
         return view('students.edit', compact('student', 'classes'));
     }
 
+    /**
+     * تحديث بيانات الطالب
+     */
     public function update(Request $request, Student $student)
     {
         $validated = $request->validate([
@@ -153,47 +180,56 @@ class StudentController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
-            
+
             \Log::error('Error updating student: ' . $e->getMessage());
-            
+
             return redirect()->back()
                 ->withInput()
                 ->with('error', 'حدث خطأ أثناء تحديث بيانات الطالب: ' . $e->getMessage());
         }
     }
 
+    /**
+     * حذف الطالب
+     */
     public function destroy(Student $student)
     {
         try {
             $student->delete();
-            
+
             return redirect()->route('students.index')
                 ->with('success', 'تم حذف الطالب بنجاح');
-                
+
         } catch (\Exception $e) {
             \Log::error('Error deleting student: ' . $e->getMessage());
-            
+
             return redirect()->route('students.index')
                 ->with('error', 'لا يمكن حذف الطالب لوجود سجلات مرتبطة به');
         }
     }
 
+    /**
+     * تفعيل/تعطيل الطالب
+     */
     public function toggleStatus(Student $student)
     {
         try {
             $student->update(['is_active' => !$student->is_active]);
 
             $status = $student->is_active ? 'تفعيل' : 'تعطيل';
-            
+
             return redirect()->back()
                 ->with('success', "تم {$status} الطالب بنجاح");
-                
+
         } catch (\Exception $e) {
             return redirect()->back()
                 ->with('error', 'حدث خطأ أثناء تغيير حالة الطالب');
         }
     }
 
+    /**
+     * استيراد الطلاب من ملف Excel
+     */
     public function import(Request $request)
     {
         $request->validate([
@@ -206,33 +242,104 @@ class StudentController extends Controller
 
         try {
             DB::beginTransaction();
-            
+
             Excel::import(new StudentsImport, $request->file('file'));
-            
+
             DB::commit();
-            
+
             return redirect()->route('students.index')
                 ->with('success', 'تم استيراد الطلاب بنجاح');
-                
+
         } catch (\Exception $e) {
             DB::rollBack();
-            
+
             \Log::error('Error importing students: ' . $e->getMessage());
-            
+
             return redirect()->back()
                 ->with('error', 'حدث خطأ أثناء استيراد الطلاب: ' . $e->getMessage());
         }
     }
 
-    public function downloadTemplate()
-    {
-        try {
-            return Excel::download(new StudentsTemplateExport, 'students_template.xlsx');
-        } catch (\Exception $e) {
-            \Log::error('Error downloading template: ' . $e->getMessage());
-            
-            return redirect()->back()
-                ->with('error', 'حدث خطأ أثناء تحميل النموذج: ' . $e->getMessage());
-        }
+    /**
+     * تحميل نموذج Excel فارغ
+     */
+    
+
+public function downloadTemplate(): BinaryFileResponse
+{
+    $spreadsheet = new Spreadsheet();
+    $sheet = $spreadsheet->getActiveSheet();
+
+    // عناوين الأعمدة بالعربية
+    $headers = [
+        'اسم الفصل',
+        'اسم الطالب', 
+        'الهوية الوطنية',
+        'تاريخ الميلاد',
+        'الجنس',
+        'الجنسية',
+        'رقم الجوال',
+        'البريد الإلكتروني',
+        'اسم ولي الأمر',
+        'صلة ولي الأمر (الأب ..)',
+        'رقم جوال ولي الأمر',
+        'أيميل ولي الأمر',
+        'تاريخ التسجيل',
+        'الحالة',
+        'ملاحظات',
+        'is_active'
+    ];
+
+    // إضافة العناوين
+    foreach ($headers as $index => $header) {
+        $sheet->setCellValueByColumnAndRow($index + 1, 1, $header);
     }
+
+    // تنسيق العناوين
+    $sheet->getStyle('A1:P1')->getFont()->setBold(true);
+
+    // إضافة بيانات مثال
+    $exampleData = [
+        'الصف الأول أ',
+        'أحمد محمد',
+        '1112223334',
+        '2020-01-15',
+        'ذكر',
+        'سعودي',
+        '0551234567',
+        'ahmed@example.com',
+        'محمد أحمد',
+        'الأب',
+        '0557654321',
+        'parent@example.com',
+        '2024-01-01',
+        'نشط',
+        'لا توجد ملاحظات',
+        '1'
+    ];
+
+    foreach ($exampleData as $index => $data) {
+        $sheet->setCellValueByColumnAndRow($index + 1, 2, $data);
+    }
+
+    // ضبط عرض الأعمدة تلقائياً
+    foreach (range('A', 'P') as $column) {
+        $sheet->getColumnDimension($column)->setAutoSize(true);
+    }
+
+    // حفظ الملف
+    $fileName = 'student-import-template-' . date('Y-m-d') . '.xlsx';
+    $tempPath = storage_path('app/temp/' . $fileName);
+    
+    // التأكد من وجود المجلد
+    if (!is_dir(dirname($tempPath))) {
+        mkdir(dirname($tempPath), 0755, true);
+    }
+
+    $writer = new Xlsx($spreadsheet);
+    $writer->save($tempPath);
+
+    return response()->download($tempPath)->deleteFileAfterSend(true);
+}
+
 }

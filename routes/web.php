@@ -70,9 +70,8 @@ Route::resource('students', StudentControllerNew::class);
 Route::patch('students/{student}/toggle-status', [StudentControllerNew::class, 'toggleStatus'])->name('students.toggle-status');
 Route::patch('students/{student}/change-status', [StudentControllerNew::class, 'changeStatus'])->name('students.change-status');
 Route::post('students/import', [StudentControllerNew::class, 'import'])->name('students.import');
-Route::get('students/download-template', [StudentControllerNew::class, 'downloadImportTemplate'])->name('students.download-template');
 Route::get('students/stats', [StudentControllerNew::class, 'getStats'])->name('students.stats');
-
+Route::get('students/template/download', [StudentControllerNew::class, 'downloadTemplate'])->name('students.download-template');
 // مسارات نظام الحضور والغيابة
 Route::get('attendances', [App\Http\Controllers\AttendanceController::class, 'index'])->name('attendances.index');
 Route::get('attendances/class', [App\Http\Controllers\AttendanceController::class, 'showClassAttendanceForm'])->name('attendances.class-form');
@@ -83,3 +82,5 @@ Route::post('attendances/show-report', [App\Http\Controllers\AttendanceControlle
 Route::get('attendances/excuses', [App\Http\Controllers\AttendanceController::class, 'excuses'])->name('attendances.excuses');
 Route::get('attendances/statistics', [App\Http\Controllers\AttendanceController::class, 'statistics'])->name('attendances.statistics');
 Route::patch('attendances/excuses/{excuse}/status', [App\Http\Controllers\AttendanceController::class, 'updateExcuseStatus'])->name('attendances.update-excuse-status');
+
+

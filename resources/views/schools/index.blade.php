@@ -1,143 +1,254 @@
 @extends('layouts.app')
 
-@section('title', 'إدارة المدارس')
+@section('title', 'إدارة الطلاب')
 
 @section('content')
 <div class="container-fluid">
     <div class="row">
         <div class="col-12">
-            <div class="card">
+            <div class="card shadow-sm">
                 <div class="card-header d-flex justify-content-between align-items-center">
-                    <h3 class="card-title">قائمة المدارس</h3>
-                    <a href="{{ route('schools.create') }}" class="btn btn-primary">
-                        <i class="fas fa-plus"></i> إضافة مدرسة جديدة
-                    </a>
+                    <h3 class="card-title mb-0" style="color: #ffffff;">
+                        <i class="fas fa-user-graduate ml-2"></i>
+                        قائمة الطلاب
+                    </h3>
+                    <div class="btn-group">
+                        <a href="{{ route('students.create') }}" class="btn btn-light btn-sm">
+                            <i class="fas fa-plus ml-1"></i> إضافة طالب
+                        </a>
+                        <a href="{{ route('students.download-template') }}" class="btn btn-success btn-sm">
+                            <i class="fas fa-download ml-1"></i> تحميل نموذج
+                        </a>
+                        <button type="button" class="btn btn-info btn-sm" data-bs-toggle="modal" data-bs-target="#importModal">
+                            <i class="fas fa-upload ml-1"></i> استيراد طلاب
+                        </button>
+                    </div>
                 </div>
                 <div class="card-body">
                     @if(session('success'))
-                        <div class="alert alert-success alert-dismissible">
-                            <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
-                            <i class="icon fas fa-check"></i>
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            <i class="fas fa-check-circle me-2"></i>
                             {{ session('success') }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                         </div>
                     @endif
 
                     @if(session('error'))
-                        <div class="alert alert-danger alert-dismissible">
-                            <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
-                            <i class="icon fas fa-ban"></i>
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <i class="fas fa-exclamation-circle me-2"></i>
                             {{ session('error') }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                         </div>
                     @endif
 
                     <!-- نموذج البحث والتصفية -->
-                    <form method="GET" action="{{ route('schools.index') }}" class="mb-4">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <input type="text" name="search" class="form-control" 
-                                           placeholder="ابحث باسم المدرسة أو الرمز" 
-                                           value="{{ request('search') }}">
+                    <form method="GET" action="{{ route('students.index') }}" class="mb-4">
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <div class="row g-3">
+                                    <div class="col-md-3">
+                                        <div class="form-group">
+                                            <label class="form-label small mb-1">
+                                                <i class="fas fa-search ml-1"></i> بحث
+                                            </label>
+                                            <input type="text" name="search" class="form-control form-control-sm" 
+                                                   placeholder="ابحث بالاسم أو الرقم" 
+                                                   value="{{ request('search') }}">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <div class="form-group">
+                                            <label class="form-label small mb-1">
+                                                <i class="fas fa-door-open ml-1"></i> الفصل
+                                            </label>
+                                            <select name="class_id" class="form-select form-select-sm">
+                                                <option value="">جميع الفصول</option>
+                                                @foreach($ٍclasses as $class)
+                                                    <option value="{{ $class->id }}" 
+                                                        {{ request('class_id') == $class->id ? 'selected' : '' }}>
+                                                        {{ $class->grade->name_ar }} - {{ $class->name_ar }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <div class="form-group">
+                                            <label class="form-label small mb-1">
+                                                <i class="fas fa-venus-mars ml-1"></i> الجنس
+                                            </label>
+                                            <select name="gender" class="form-select form-select-sm">
+                                                <option value="">جميع الجنسين</option>
+                                                <option value="male" {{ request('gender') == 'male' ? 'selected' : '' }}>ذكر</option>
+                                                <option value="female" {{ request('gender') == 'female' ? 'selected' : '' }}>أنثى</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <div class="form-group">
+                                            <label class="form-label small mb-1">
+                                                <i class="fas fa-flag ml-1"></i> الحالة
+                                            </label>
+                                            <select name="status" class="form-select form-select-sm">
+                                                <option value="">جميع الحالات</option>
+                                                <option value="active" {{ request('status') == 'active' ? 'selected' : '' }}>نشط</option>
+                                                <option value="transferred" {{ request('status') == 'transferred' ? 'selected' : '' }}>منقول</option>
+                                                <option value="graduated" {{ request('status') == 'graduated' ? 'selected' : '' }}>متخرج</option>
+                                                <option value="withdrawn" {{ request('status') == 'withdrawn' ? 'selected' : '' }}>منسحب</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <div class="form-group">
+                                            <label class="form-label small mb-1">
+                                                <i class="fas fa-toggle-on ml-1"></i> النشاط
+                                            </label>
+                                            <select name="is_active" class="form-select form-select-sm">
+                                                <option value="">الكل</option>
+                                                <option value="active" {{ request('is_active') == 'active' ? 'selected' : '' }}>نشط</option>
+                                                <option value="inactive" {{ request('is_active') == 'inactive' ? 'selected' : '' }}>غير نشط</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-1">
+                                        <label class="form-label small mb-1">&nbsp;</label>
+                                        <button type="submit" class="btn btn-primary btn-sm w-100">
+                                            <i class="fas fa-search"></i>
+                                        </button>
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="form-group">
-                                    <select name="status" class="form-control">
-                                        <option value="">جميع الحالات</option>
-                                        <option value="active" {{ request('status') == 'active' ? 'selected' : '' }}>نشطة</option>
-                                        <option value="inactive" {{ request('status') == 'inactive' ? 'selected' : '' }}>غير نشطة</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="col-md-2">
-                                <button type="submit" class="btn btn-info">
-                                    <i class="fas fa-search"></i> بحث
-                                </button>
                             </div>
                         </div>
                     </form>
 
+                    <!-- عداد النتائج -->
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div>
+                            <small class="text-muted">
+                                عرض {{ $students->firstItem() ?? 0 }} إلى {{ $students->lastItem() ?? 0 }} 
+                                من أصل {{ $students->total() }} طالب
+                            </small>
+                        </div>
+                        <div>
+                            <span class="badge bg-primary">إجمالي الطلاب: {{ $students->total() }}</span>
+                        </div>
+                    </div>
+
                     <div class="table-responsive">
-                        <table class="table table-btable table-hover text-center">
+                        <table class="table table-hover table-striped align-middle" id="studentsTable">
                             <thead>
                                 <tr>
-                                    <th>#</th>
-                                    <th>رمز المدرسة</th>
-                                    <th>اسم المدرسة</th>
-                                    <th>الاسم بالعربية</th>
-                                    <th>المدير</th>
-                                    <th>المراحل</th>
-                                    <th>المستخدمين</th>
-                                    <th>الحالة</th>
-                                    <th>تاريخ الإنشاء</th>
-                                    <th>الإجراءات</th>
+                                    <th style="width: 50px;" class="text-center">#</th>
+                                    <th style="width: 60px;" class="text-center">الصورة</th>
+                                    <th style="width: 120px;">الرقم الجامعي</th>
+                                    <th>الاسم الكامل</th>
+                                    <th style="width: 150px;">الفصل</th>
+                                    <th style="width: 80px;" class="text-center">الجنس</th>
+                                    <th style="width: 80px;" class="text-center">العمر</th>
+                                    <th style="width: 100px;" class="text-center">الحالة</th>
+                                    <th style="width: 100px;" class="text-center">النشاط</th>
+                                    <th style="width: 180px;" class="text-center">الإجراءات</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach($schools as $school)
+                                @forelse($students as $student)
                                 <tr>
-                                    <td>{{ $loop->iteration + (($schools->currentPage() - 1) * $schools->perPage()) }}</td>
-                                    <td>
-                                        <span class="badge badge-secondary">{{ $school->code }}</span>
+                                    <td class="text-center">
+                                        <small>{{ $loop->iteration + (($students->currentPage() - 1) * $students->perPage()) }}</small>
                                     </td>
-                                    <td>{{ $school->name }}</td>
-                                    <td>{{ $school->name_ar }}</td>
-                                    <td>{{ $school->principal_name ?? 'غير محدد' }}</td>
-                                    <td>
-                                        <span class="badge badge-info">{{ $school->stages_count }}</span>
+                                    <td class="text-center">
+                                        <div class="student-avatar">
+                                            <i class="fas fa-user-graduate fa-lg text-muted"></i>
+                                        </div>
                                     </td>
                                     <td>
-                                        <span class="badge badge-primary">{{ $school->users_count }}</span>
+                                        <span class="badge bg-secondary">{{ $student->national_id ?? 'غير محدد' }}</span>
                                     </td>
                                     <td>
-                                        <span class="badge badge-{{ $school->is_active ? 'success' : 'danger' }}">
-                                            {{ $school->status_text }}
+                                        <strong>{{ $student->full_name }}</strong>
+                                        @if($student->national_id)
+                                            <br><small class="text-muted">
+                                                <i class="fas fa-id-card ml-1"></i>{{ $student->national_id }}
+                                            </small>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-info text-white">
+                                            {{ $student->class->grade->name_ar }} - {{ $student->class->name_ar }}
                                         </span>
                                     </td>
-                                    <td>{{ $school->created_at->format('Y-m-d') }}</td>
-                                    <td>
-                                        <div class="btn-group">
-                                            <a href="{{ route('schools.show', $school) }}" class="btn btn-outline-info btn-sm" title="عرض">
+                                    <td class="text-center">
+                                        <span class="badge bg-light text-dark">{{ $student->gender_text }}</span>
+                                    </td>
+                                    <td class="text-center">
+                                        <small>{{ $student->age }} سنة</small>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge bg-{{ $student->status_color }}">
+                                            {{ $student->status_text }}
+                                        </span>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge bg-{{ $student->is_active ? 'success' : 'danger' }}">
+                                            {{ $student->is_active ? 'نشط' : 'غير نشط' }}
+                                        </span>
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <a href="{{ route('students.show', $student) }}" 
+                                               class="btn btn-outline-info" 
+                                               title="عرض">
                                                 <i class="fas fa-eye"></i>
                                             </a>
-                                            <a href="{{ route('schools.edit', $school) }}" class="btn btn-outline-primary btn-sm" title="تعديل">
+                                            <a href="{{ route('students.edit', $student) }}" 
+                                               class="btn btn-outline-primary" 
+                                               title="تعديل">
                                                 <i class="fas fa-edit"></i>
                                             </a>
-                                            <form action="{{ route('schools.toggle-status', $school) }}" method="POST" class="d-inline">
+                                            <form action="{{ route('students.toggle-status', $student) }}" method="POST" class="d-inline">
                                                 @csrf
                                                 @method('PATCH')
-                                                <button type="submit" class="btn btn-outline-{{ $school->is_active ? 'warning' : 'success' }} btn-sm" 
-                                                        title="{{ $school->is_active ? 'تعطيل' : 'تفعيل' }}">
-                                                    <i class="fas fa-{{ $school->is_active ? 'pause' : 'play' }}"></i>
+                                                <button type="submit" 
+                                                        class="btn btn-outline-{{ $student->is_active ? 'warning' : 'success' }}" 
+                                                        title="{{ $student->is_active ? 'تعطيل' : 'تفعيل' }}">
+                                                    <i class="fas fa-{{ $student->is_active ? 'pause' : 'play' }}"></i>
                                                 </button>
                                             </form>
-                                            <form action="{{ route('schools.destroy', $school) }}" method="POST" class="d-inline">
+                                            <form action="{{ route('students.destroy', $student) }}" method="POST" class="d-inline">
                                                 @csrf
                                                 @method('DELETE')
-                                                <button type="submit" class="btn btn-outline-danger btn-sm" 
+                                                <button type="submit" 
+                                                        class="btn btn-outline-danger" 
                                                         title="حذف"
-                                                        onclick="return confirm('هل أنت متأكد من حذف هذه المدرسة؟')">
+                                                        onclick="return confirm('هل أنت متأكد من حذف هذا الطالب؟')">
                                                     <i class="fas fa-trash"></i>
                                                 </button>
                                             </form>
                                         </div>
                                     </td>
                                 </tr>
-                                @endforeach
+                                @empty
+                                <tr>
+                                    <td colspan="10" class="text-center py-5">
+                                        <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                                        <p class="text-muted">لا توجد بيانات للعرض</p>
+                                    </td>
+                                </tr>
+                                @endforelse
                             </tbody>
                         </table>
                     </div>
 
-                        <!-- الترقيم المحسّن -->
-                    @if($schools->hasPages())
+                    <!-- الترقيم المحسّن -->
+                    @if($students->hasPages())
                     <div class="d-flex justify-content-between align-items-center mt-4">
                         <div>
                             <small class="text-muted">
-                                الصفحة {{ $schools->currentPage() }} من {{ $schools->lastPage() }}
+                                الصفحة {{ $students->currentPage() }} من {{ $students->lastPage() }}
                             </small>
                         </div>
                         <nav aria-label="التنقل بين الصفحات">
-                            {{ $schools->links('pagination::bootstrap-5') }}
+                            {{ $students->links('pagination::bootstrap-5') }}
                         </nav>
                     </div>
                     @endif
@@ -146,21 +257,63 @@
         </div>
     </div>
 </div>
+
+<!-- Modal الاستيراد -->
+<div class="modal fade" id="importModal" tabindex="-1" aria-labelledby="importModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="importModalLabel" style="color: #ffffff;">
+                    <i class="fas fa-file-import ml-2"></i>
+                    استيراد طلاب من ملف Excel
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ route('students.import') }}" method="POST" enctype="multipart/form-data">
+                @csrf
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="file" class="form-label">
+                            <i class="fas fa-file-excel ml-1"></i> اختر ملف Excel
+                        </label>
+                        <input type="file" class="form-control" id="file" name="file" accept=".xlsx,.xls,.csv" required>
+                        <small class="form-text text-muted">
+                            الملف يجب أن يكون بصيغة Excel (.xlsx, .xls) أو CSV
+                        </small>
+                    </div>
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle ml-1"></i>
+                        تأكد من تنسيق الملف حسب النموذج المرفق. 
+                        <a href="{{ route('students.download-template') }}" class="alert-link">تحميل النموذج</a>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times ml-1"></i> إلغاء
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-upload ml-1"></i> استيراد
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 @endsection
 
 @section('scripts')
 <script>
     $(document).ready(function() {
-        $('.table').DataTable({
-            "language": {
-                "url": "//cdn.datatables.net/plug-ins/1.10.25/i18n/Arabic.json"
-            },
-            "responsive": true,
-            "autoWidth": false,
-            "paging": false,
-            "searching": false,
-            "info": false
+        // تفعيل tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[title]'))
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl)
         });
+        
+        // إخفاء التنبيهات تلقائياً
+        setTimeout(function() {
+            $('.alert').fadeOut('slow');
+        }, 5000);
     });
 </script>
 @endsection
