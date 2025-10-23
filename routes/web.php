@@ -84,3 +84,40 @@ Route::get('attendances/statistics', [App\Http\Controllers\AttendanceController:
 Route::patch('attendances/excuses/{excuse}/status', [App\Http\Controllers\AttendanceController::class, 'updateExcuseStatus'])->name('attendances.update-excuse-status');
 
 
+Route::prefix('teachers')->name('teachers.')->group(function () {
+    
+    // المسارات الأساسية (CRUD)
+    Route::get('/', [TeacherController::class, 'index'])->name('index');
+    Route::get('/create', [TeacherController::class, 'create'])->name('create');
+    Route::post('/', [TeacherController::class, 'store'])->name('store');
+    Route::get('/{teacher}', [TeacherController::class, 'show'])->name('show');
+    Route::get('/{teacher}/edit', [TeacherController::class, 'edit'])->name('edit');
+    Route::put('/{teacher}', [TeacherController::class, 'update'])->name('update');
+    Route::delete('/{teacher}', [TeacherController::class, 'destroy'])->name('destroy');
+    
+    // مسارات إضافية
+    Route::patch('/{teacher}/toggle-status', [TeacherController::class, 'toggleStatus'])->name('toggle-status');
+    Route::get('/download/template', [TeacherController::class, 'downloadTemplate'])->name('download-template');
+    Route::post('/import', [TeacherController::class, 'import'])->name('import');
+    Route::get('/export', [TeacherController::class, 'export'])->name('export');
+});
+
+// أو يمكنك استخدام Route Resource مع المسارات الإضافية
+Route::resource('teachers', TeacherController::class);
+Route::patch('teachers/{teacher}/toggle-status', [TeacherController::class, 'toggleStatus'])->name('teachers.toggle-status');
+Route::get('teachers/download/template', [TeacherController::class, 'downloadTemplate'])->name('teachers.download-template');
+Route::post('teachers/import', [TeacherController::class, 'import'])->name('teachers.import');
+Route::get('teachers/export', [TeacherController::class, 'export'])->name('teachers.export');
+
+// في ملف routes/web.php
+Route::get('/debug', function () {
+    return view('debug');
+})->name('debug');
+
+Route::post('/debug/clear-log', function () {
+    $logFile = storage_path('logs/laravel.log');
+    if (file_exists($logFile)) {
+        file_put_contents($logFile, '');
+    }
+    return back()->with('success', 'تم مسح سجلات Log بنجاح');
+})->name('debug.clear-log');
