@@ -341,25 +341,28 @@
                                 <!-- الفصول -->
                                 <div>
                                     <label class="form-label fw-bold">الفصول الدراسية:</label>
+                                    <small class="text-muted d-block mb-2">اختر الفصول التي يدرس فيها المعلم مع تحديد المادة لكل فصل</small>
                                     <div class="table-responsive">
                                         <table class="table table-bordered table-sm">
                                             <thead class="table-light">
                                                 <tr>
-                                                    <th width="50">اختيار</th>
+                                                    <th width="50" class="text-center">اختيار</th>
                                                     <th>الصف</th>
                                                     <th>الفصل</th>
                                                     <th>المادة</th>
-                                                    <th width="120">رائد الفصل</th>
+                                                    <th width="120" class="text-center">رائد الفصل</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
                                                 @php
-                                                    $teacherClassIds = old('classes', $teacherClasses->pluck('id')->toArray());
+                                                    // الفصول المرتبطة بالمعلم حالياً
+                                                    $teacherClassesData = $teacher->schoolClasses->keyBy('id');
+                                                    $teacherClassIds = $teacherClassesData->pluck('id')->toArray();
                                                 @endphp
                                                 @foreach($schoolClasses as $class)
                                                     @php
-                                                        $isSelected = in_array($class->id, $teacherClassIds);
-                                                        $pivotData = $teacherClasses->get($class->id);
+                                                        $isSelected = in_array($class->id, old('classes', $teacherClassIds));
+                                                        $pivotData = $teacherClassesData->get($class->id);
                                                         $selectedSubject = old("class_subject_{$class->id}", $pivotData->pivot->subject_id ?? null);
                                                         $isClassTeacher = old("is_class_teacher_{$class->id}", $pivotData->pivot->is_class_teacher ?? false);
                                                     @endphp
@@ -399,6 +402,7 @@
                                     </div>
                                 </div>
                             </div>
+                        </div>   
                         </div>
 
                         <!-- الحالة والملاحظات -->

@@ -61,18 +61,30 @@ class Teacher extends Model
     }
 
     /**
-     * العلاقة مع الفصول (One to Many)
-     * جدول school_classes يحتوي على teacher_id مباشرة
+     * العلاقة مع الفصول (Many to Many) - من خلال جدول teacher_school_class
      */
     public function schoolClasses()
     {
-        return $this->hasMany(SchoolClass::class, 'teacher_id');
+        return $this->belongsToMany(SchoolClass::class, 'teacher_school_class', 'teacher_id', 'school_class_id')
+            ->withPivot('subject_id', 'is_class_teacher')
+            ->withTimestamps();
     }
 
     /**
-     * الفصول التي يكون فيها رائد فصل (نفس العلاقة)
+     * الفصول التي يكون فيها رائد فصل
      */
     public function classTeacherOf()
+    {
+        return $this->belongsToMany(SchoolClass::class, 'teacher_school_class', 'teacher_id', 'school_class_id')
+            ->wherePivot('is_class_teacher', true)
+            ->withPivot('subject_id')
+            ->withTimestamps();
+    }
+    
+    /**
+     * الفصول التي يكون فيها المعلم هو المعلم الرئيسي (من جدول school_classes)
+     */
+    public function mainClasses()
     {
         return $this->hasMany(SchoolClass::class, 'teacher_id');
     }

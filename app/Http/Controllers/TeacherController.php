@@ -1,17 +1,15 @@
 <?php
-
 namespace App\Http\Controllers;
 
 use App\Models\Teacher;
 use App\Models\School;
 use App\Models\Subject;
 use App\Models\SchoolClass;
-use App\Http\Requests\StoreTeacherRequest;
-use App\Http\Requests\UpdateTeacherRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
 
 class TeacherController extends Controller
 {
@@ -60,31 +58,95 @@ class TeacherController extends Controller
     /**
      * حفظ المعلم الجديد
      */
-    public function store(StoreTeacherRequest $request)
+    public function store(Request $request)
     {
         DB::beginTransaction();
         
         try {
-            // 1. التحقق من البيانات المستلمة
             Log::info('=== بدء عملية إضافة معلم جديد ===');
             Log::info('البيانات المستلمة:', $request->all());
 
-            $data = $request->validated();
+            // التحقق من البيانات يدوياً
+            $validator = Validator::make($request->all(), [
+                // المعلومات الشخصية
+                'name' => 'required|string|max:255',
+                'national_id' => 'required|string|max:20|unique:teachers,national_id',
+                'birth_date' => 'required|date|before:today',
+                'gender' => 'required|in:male,female',
+                'nationality' => 'required|string|max:100',
+                'photo' => 'nullable|image|mimes:jpeg,jpg,png|max:2048',
+                
+                // معلومات التواصل
+                'phone' => 'required|string|max:20',
+                'email' => 'required|email|max:255|unique:teachers,email',
+                'address' => 'nullable|string',
+                
+                // المعلومات الوظيفية
+                'employee_number' => 'required|string|max:50|unique:teachers,employee_number',
+                'specialization' => 'required|string|max:255',
+                'qualification' => 'required|string|max:255',
+                'hire_date' => 'required|date',
+                'contract_type' => 'required|in:permanent,temporary,substitute',
+                'salary' => 'nullable|numeric|min:0',
+                'department' => 'nullable|string|max:255',
+                
+                // العلاقات
+                'school_id' => 'required|exists:schools,id',
+                'subjects' => 'nullable|array',
+                'subjects.*' => 'exists:subjects,id',
+                'classes' => 'nullable|array',
+                'classes.*' => 'exists:school_classes,id',
+                
+                // الحالة
+                'status' => 'required|in:active,on_leave,retired,transferred',
+                'is_active' => 'nullable|boolean',
+                'notes' => 'nullable|string',
+            ], [
+                'name.required' => 'الاسم الكامل مطلوب',
+                'national_id.required' => 'رقم الهوية مطلوب',
+                'national_id.unique' => 'رقم الهوية مسجل مسبقاً',
+                'email.unique' => 'البريد الإلكتروني مسجل مسبقاً',
+                'employee_number.unique' => 'الرقم الوظيفي مسجل مسبقاً',
+                'school_id.exists' => 'المدرسة المحددة غير موجودة',
+                'birth_date.before' => 'تاريخ الميلاد يجب أن يكون قبل اليوم',
+            ]);
+
+            if ($validator->fails()) {
+                Log::error('فشل التحقق من البيانات:', $validator->errors()->toArray());
+                return back()
+                    ->withErrors($validator)
+                    ->withInput()
+                    ->with('error', 'يرجى التحقق من البيانات المدخلة');
+            }
+
+            $data = $validator->validated();
+            
+            // تحويل is_active إلى boolean
+            $data['is_active'] = $request->has('is_active') ? true : false;
+            
             Log::info('البيانات بعد التحقق:', $data);
 
-            // 2. رفع الصورة
+            // رفع الصورة
             if ($request->hasFile('photo')) {
                 try {
                     Log::info('بدء رفع الصورة...');
-                    $data['photo'] = $request->file('photo')->store('teachers', 'public');
-                    Log::info('تم رفع الصورة بنجاح: ' . $data['photo']);
+                    $photo = $request->file('photo');
+                    $photoPath = $photo->store('teachers', 'public');
+                    $data['photo'] = $photoPath;
+                    Log::info('تم رفع الصورة بنجاح: ' . $photoPath);
                 } catch (\Exception $e) {
                     Log::error('خطأ في رفع الصورة: ' . $e->getMessage());
                     throw new \Exception('فشل رفع الصورة: ' . $e->getMessage());
                 }
             }
 
-            // 3. إنشاء المعلم
+            // إزالة البيانات الإضافية من $data
+            $subjects = $data['subjects'] ?? [];
+            $classes = $request->input('classes', []);
+            unset($data['subjects']);
+            unset($data['classes']);
+
+            // إنشاء المعلم
             try {
                 Log::info('بدء إنشاء سجل المعلم...');
                 $teacher = Teacher::create($data);
@@ -95,28 +157,26 @@ class TeacherController extends Controller
                 throw new \Exception('فشل إنشاء المعلم: ' . $e->getMessage());
             }
 
-            // 4. ربط المواد
-            if ($request->has('subjects') && is_array($request->subjects)) {
+            // ربط المواد في جدول teacher_subject
+            if (!empty($subjects) && is_array($subjects)) {
                 try {
                     Log::info('بدء ربط المواد...');
-                    Log::info('المواد المحددة:', $request->subjects);
-                    $teacher->subjects()->attach($request->subjects);
+                    Log::info('المواد المحددة:', $subjects);
+                    $teacher->subjects()->attach($subjects);
                     Log::info('تم ربط المواد بنجاح');
                 } catch (\Exception $e) {
                     Log::error('خطأ في ربط المواد: ' . $e->getMessage());
                     throw new \Exception('فشل ربط المواد: ' . $e->getMessage());
                 }
-            } else {
-                Log::info('لم يتم تحديد أي مواد');
             }
 
-            // 5. ربط الفصول
-            if ($request->has('classes') && is_array($request->classes)) {
+            // ربط الفصول في جدول teacher_school_class
+            if (!empty($classes) && is_array($classes)) {
                 try {
                     Log::info('بدء ربط الفصول...');
-                    Log::info('الفصول المحددة:', $request->classes);
+                    Log::info('الفصول المحددة:', $classes);
                     
-                    foreach ($request->classes as $classId) {
+                    foreach ($classes as $classId) {
                         $subjectId = $request->input("class_subject_{$classId}");
                         $isClassTeacher = $request->input("is_class_teacher_{$classId}") ? true : false;
                         
@@ -132,8 +192,6 @@ class TeacherController extends Controller
                     Log::error('خطأ في ربط الفصول: ' . $e->getMessage());
                     throw new \Exception('فشل ربط الفصول: ' . $e->getMessage());
                 }
-            } else {
-                Log::info('لم يتم تحديد أي فصول');
             }
 
             DB::commit();
@@ -167,7 +225,7 @@ class TeacherController extends Controller
      */
     public function show(Teacher $teacher)
     {
-        $teacher->load(['school', 'subjects', 'schoolClasses.grade', 'classTeacherOf']);
+        $teacher->load(['school', 'subjects', 'schoolClasses']);
         
         return view('teachers.show', compact('teacher'));
     }
@@ -181,106 +239,128 @@ class TeacherController extends Controller
         $subjects = Subject::where('is_active', true)->get();
         $schoolClasses = SchoolClass::with('grade')->where('is_active', true)->get();
         
-        // الفصول المرتبطة بالمعلم مع معلومات المادة
-        $teacherClasses = $teacher->schoolClasses()
-            ->withPivot('subject_id', 'is_class_teacher')
-            ->get()
-            ->keyBy('id');
-        
-        return view('teachers.edit', compact('teacher', 'schools', 'subjects', 'schoolClasses', 'teacherClasses'));
+        return view('teachers.edit', compact('teacher', 'schools', 'subjects', 'schoolClasses'));
     }
 
     /**
      * تحديث بيانات المعلم
      */
-    public function update(UpdateTeacherRequest $request, Teacher $teacher)
-    {
-        DB::beginTransaction();
-        
-        try {
-            Log::info('=== بدء عملية تحديث المعلم ID: ' . $teacher->id . ' ===');
-            Log::info('البيانات المستلمة:', $request->all());
+    public function update(Request $request, Teacher $teacher)
+{
+    DB::beginTransaction();
+    
+    try {
+        Log::info('=== بدء عملية تحديث المعلم ID: ' . $teacher->id . ' ===');
+        Log::info('البيانات المستلمة:', $request->all());
 
-            $data = $request->validated();
+        // التحقق من صحة البيانات
+        $validator = Validator::make($request->all(), [
+            'name' => 'required|string|max:255',
+            'national_id' => 'required|string|max:20|unique:teachers,national_id,' . $teacher->id,
+            'birth_date' => 'required|date|before:today',
+            'gender' => 'required|in:male,female',
+            'nationality' => 'required|string|max:100',
+            'photo' => 'nullable|image|mimes:jpeg,jpg,png|max:2048',
+            'phone' => 'required|string|max:20',
+            'email' => 'required|email|max:255|unique:teachers,email,' . $teacher->id,
+            'address' => 'nullable|string',
+            'employee_number' => 'required|string|max:50|unique:teachers,employee_number,' . $teacher->id,
+            'specialization' => 'required|string|max:255',
+            'qualification' => 'required|string|max:255',
+            'hire_date' => 'required|date',
+            'contract_type' => 'required|in:permanent,temporary,substitute',
+            'salary' => 'nullable|numeric|min:0',
+            'department' => 'nullable|string|max:255',
+            'school_id' => 'required|exists:schools,id',
+            'subjects' => 'nullable|array',
+            'subjects.*' => 'exists:subjects,id',
+            'classes' => 'nullable|array',
+            'classes.*' => 'exists:school_classes,id',
+            'status' => 'required|in:active,on_leave,retired,transferred',
+            'is_active' => 'nullable|boolean',
+            'notes' => 'nullable|string',
+        ]);
 
-            // رفع الصورة الجديدة
-            if ($request->hasFile('photo')) {
-                try {
-                    // حذف الصورة القديمة
-                    if ($teacher->photo && Storage::disk('public')->exists($teacher->photo)) {
-                        Storage::disk('public')->delete($teacher->photo);
-                        Log::info('تم حذف الصورة القديمة');
-                    }
-                    $data['photo'] = $request->file('photo')->store('teachers', 'public');
-                    Log::info('تم رفع الصورة الجديدة: ' . $data['photo']);
-                } catch (\Exception $e) {
-                    Log::error('خطأ في رفع الصورة: ' . $e->getMessage());
-                    throw new \Exception('فشل رفع الصورة: ' . $e->getMessage());
-                }
-            }
-
-            // تحديث بيانات المعلم
-            try {
-                $teacher->update($data);
-                Log::info('تم تحديث بيانات المعلم بنجاح');
-            } catch (\Exception $e) {
-                Log::error('خطأ في تحديث المعلم: ' . $e->getMessage());
-                throw new \Exception('فشل تحديث المعلم: ' . $e->getMessage());
-            }
-
-            // تحديث المواد
-            try {
-                if ($request->has('subjects')) {
-                    $teacher->subjects()->sync($request->subjects);
-                    Log::info('تم تحديث المواد بنجاح');
-                } else {
-                    $teacher->subjects()->detach();
-                    Log::info('تم إزالة جميع المواد');
-                }
-            } catch (\Exception $e) {
-                Log::error('خطأ في تحديث المواد: ' . $e->getMessage());
-                throw new \Exception('فشل تحديث المواد: ' . $e->getMessage());
-            }
-
-            // تحديث الفصول
-            try {
-                $syncData = [];
-                if ($request->has('classes')) {
-                    foreach ($request->classes as $classId) {
-                        $subjectId = $request->input("class_subject_{$classId}");
-                        $isClassTeacher = $request->input("is_class_teacher_{$classId}") ? true : false;
-                        
-                        $syncData[$classId] = [
-                            'subject_id' => $subjectId,
-                            'is_class_teacher' => $isClassTeacher,
-                        ];
-                    }
-                }
-                $teacher->schoolClasses()->sync($syncData);
-                Log::info('تم تحديث الفصول بنجاح');
-            } catch (\Exception $e) {
-                Log::error('خطأ في تحديث الفصول: ' . $e->getMessage());
-                throw new \Exception('فشل تحديث الفصول: ' . $e->getMessage());
-            }
-
-            DB::commit();
-            Log::info('=== تمت عملية التحديث بنجاح ===');
-
-            return redirect()
-                ->route('teachers.index')
-                ->with('success', 'تم تحديث بيانات المعلم بنجاح');
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-
-            Log::error('=== فشلت عملية تحديث المعلم ===');
-            Log::error('رسالة الخطأ: ' . $e->getMessage());
-
+        if ($validator->fails()) {
+            Log::error('فشل التحقق من البيانات:', $validator->errors()->toArray());
             return back()
+                ->withErrors($validator)
                 ->withInput()
-                ->with('error', 'حدث خطأ أثناء تحديث المعلم: ' . $e->getMessage());
+                ->with('error', 'يرجى التحقق من البيانات المدخلة');
         }
+
+        $data = $validator->validated();
+        $data['is_active'] = $request->has('is_active') ? true : false;
+
+        // رفع الصورة الجديدة إن وجدت
+        if ($request->hasFile('photo')) {
+            if ($teacher->photo && Storage::disk('public')->exists($teacher->photo)) {
+                Storage::disk('public')->delete($teacher->photo);
+                Log::info('تم حذف الصورة القديمة');
+            }
+
+            $photoPath = $request->file('photo')->store('teachers', 'public');
+            $data['photo'] = $photoPath;
+            Log::info('تم رفع الصورة الجديدة: ' . $photoPath);
+        }
+
+        // استخراج العلاقات
+        $subjects = $data['subjects'] ?? [];
+        $classes = $request->input('classes', []);
+        unset($data['subjects'], $data['classes']);
+
+        // تحديث بيانات المعلم الأساسية
+        $teacher->update($data);
+        Log::info('تم تحديث بيانات المعلم بنجاح');
+
+        /** ======================
+         * تحديث المواد الدراسية
+         * ====================== */
+        try {
+            $teacher->subjects()->sync($subjects);
+            Log::info('تم تحديث المواد الدراسية');
+        } catch (\Exception $e) {
+            Log::error('خطأ في تحديث المواد: ' . $e->getMessage());
+            throw new \Exception('فشل تحديث المواد: ' . $e->getMessage());
+        }
+
+        /** ======================
+         * تحديث الفصول الدراسية
+         * ====================== */
+        try {
+            $pivotData = [];
+            foreach ($classes as $classId) {
+                $pivotData[$classId] = [
+                    'subject_id' => $request->input("class_subject_{$classId}"),
+                    'is_class_teacher' => $request->has("is_class_teacher_{$classId}") ? 1 : 0,
+                ];
+            }
+            $teacher->schoolClasses()->sync($pivotData);
+            Log::info('تم تحديث الفصول الدراسية بنجاح');
+        } catch (\Exception $e) {
+            Log::error('خطأ في تحديث الفصول: ' . $e->getMessage());
+            throw new \Exception('فشل تحديث الفصول: ' . $e->getMessage());
+        }
+
+        DB::commit();
+        Log::info('=== تمت عملية التحديث بنجاح ===');
+
+        return redirect()
+            ->route('teachers.index')
+            ->with('success', 'تم تحديث بيانات المعلم بنجاح');
+
+    } catch (\Exception $e) {
+        DB::rollBack();
+
+        Log::error('=== فشلت عملية تحديث المعلم ===');
+        Log::error('رسالة الخطأ: ' . $e->getMessage());
+
+        return back()
+            ->withInput()
+            ->with('error', 'حدث خطأ أثناء تحديث المعلم: ' . $e->getMessage());
     }
+}
+
 
     /**
      * حذف المعلم
@@ -334,29 +414,5 @@ class TeacherController extends Controller
             return back()
                 ->with('error', 'حدث خطأ أثناء تغيير الحالة: ' . $e->getMessage());
         }
-    }
-
-    /**
-     * تحميل نموذج الاستيراد
-     */
-    public function downloadTemplate()
-    {
-        return back()->with('info', 'هذه الميزة قيد التطوير');
-    }
-
-    /**
-     * استيراد المعلمين من Excel
-     */
-    public function import(Request $request)
-    {
-        return back()->with('info', 'هذه الميزة قيد التطوير');
-    }
-
-    /**
-     * تصدير المعلمين إلى Excel
-     */
-    public function export(Request $request)
-    {
-        return back()->with('info', 'هذه الميزة قيد التطوير');
     }
 }
