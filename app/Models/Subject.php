@@ -51,6 +51,8 @@ class Subject extends Model
                     ->withTimestamps();
     }
 
+    
+
     /**
      * العلاقة: المادة يدرسها العديد من المعلمين
      */
@@ -216,4 +218,6 @@ class Subject extends Model
     {
         return $this->teachers()->updateExistingPivot($teacherId, ['is_primary' => $isPrimary]);
     }
+
+    
 }

@@ -4,9 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Models\Grade;
 use App\Models\Stage;
+use App\Models\Subject;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Log;
 
 class GradeController extends Controller
 {
@@ -37,6 +39,35 @@ class GradeController extends Controller
 
         return view('grades.index', compact('grades', 'stages'));
     }
+
+
+    // public function manageSubjects(Grade $grade)
+    //     {
+    //         $subjects = Subject::where('is_active', true)->get();
+    //         $gradeSubjects = $grade->subjects->pluck('id')->toArray();
+            
+    //         return view('grades.manage-subjects', compact('grade', 'subjects', 'gradeSubjects'));
+    //     }
+
+    public function manageSubjects(Grade $grade)
+{
+    $subjects = Subject::where('is_active', 1)->get();
+
+    // نضمن أن تكون Collection مفهرسة بمفتاح id
+    $gradeSubjects = $grade->subjects->keyBy('id');
+
+    return view('grades.manage-subjects', compact('grade', 'subjects', 'gradeSubjects'));
+}
+
+
+        // public function updateSubjects(Request $request, Grade $grade)
+        // {
+        //     $grade->subjects()->sync($request->subjects ?? []);
+            
+        //     return redirect()
+        //         ->route('grades.index')
+        //         ->with('success', 'تم تحديث مواد الصف بنجاح');
+        // }
 
     /**
      * عرض نموذج إنشاء صف جديد
@@ -145,6 +176,66 @@ class GradeController extends Controller
                 ->with('error', 'حدث خطأ أثناء محاولة حذف الصف.');
         }
     }
+
+
+    // أضف هذه الدوال في GradeController
+
+/**
+ * عرض صفحة إدارة مواد الصف
+ */
+// public function manageSubjects(Grade $grade)
+// {
+//     $grade->load(['stage', 'subjects']);
+//     $subjects = Subject::where('is_active', true)->get();
+    
+//     // المواد المرتبطة بالصف مع معلومات pivot
+//     $gradeSubjects = $grade->subjects->keyBy('id');
+    
+//     return view('grades.manage-subjects', compact('grade', 'subjects', 'gradeSubjects'));
+// }
+
+/**
+ * تحديث مواد الصف
+ */
+public function updateSubjects(Request $request, Grade $grade)
+{
+    try {
+        Log::info('=== بدء تحديث مواد الصف ID: ' . $grade->id . ' ===');
+        
+        $request->validate([
+            'subjects' => 'nullable|array',
+            'subjects.*' => 'exists:subjects,id',
+        ]);
+
+        // تحضير البيانات للـ sync
+        $syncData = [];
+        
+        if ($request->has('subjects')) {
+            foreach ($request->subjects as $subjectId) {
+                $syncData[$subjectId] = [
+                    'is_required' => $request->input("is_required_{$subjectId}") ? true : false,
+                    'weekly_hours' => $request->input("weekly_hours_{$subjectId}") ?? null,
+                ];
+            }
+        }
+
+        // مزامنة المواد
+        $grade->subjects()->sync($syncData);
+        
+        Log::info('تم تحديث مواد الصف بنجاح');
+        
+        return redirect()
+            ->route('grades.index')
+            ->with('success', 'تم تحديث مواد الصف بنجاح');
+            
+    } catch (\Exception $e) {
+        Log::error('خطأ في تحديث مواد الصف: ' . $e->getMessage());
+        
+        return back()
+            ->withInput()
+            ->with('error', 'حدث خطأ أثناء تحديث المواد: ' . $e->getMessage());
+    }
+}
 
     /**
      * تفعيل/تعطيل صف

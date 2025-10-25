@@ -13,6 +13,7 @@ use App\Http\Controllers\TeacherController;
 use App\Http\Controllers\StudentControllerNew;
 use App\Http\Controllers\AttendanceController;
 
+
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -88,6 +89,13 @@ Route::post('attendances/show-report', [AttendanceController::class, 'showReport
 Route::get('attendances/excuses', [AttendanceController::class, 'excuses'])->name('attendances.excuses');
 Route::get('attendances/statistics', [AttendanceController::class, 'statistics'])->name('attendances.statistics');
 Route::patch('attendances/excuses/{excuse}/status', [AttendanceController::class, 'updateExcuseStatus'])->name('attendances.update-excuse-status');
+
+
+
+Route::get('grades/{grade}/manage-subjects', [GradeController::class, 'manageSubjects'])->name('grades.manage-subjects');
+Route::post('grades/{grade}/update-subjects', [GradeController::class, 'updateSubjects'])->name('grades.update-subjects');
+
+
 
 // مسارات Debug (للتطوير فقط - احذفها في الإنتاج)
 Route::get('/debug', function () {

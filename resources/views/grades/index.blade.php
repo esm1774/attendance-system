@@ -83,7 +83,9 @@
                                     <th>عدد الفصول</th>
                                     <th>الحالة</th>
                                     <th>تاريخ الإنشاء</th>
+
                                     <th>الإجراءات</th>
+                                    <th>المواد</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -136,6 +138,40 @@
                                                 </button>
                                             </form>
                                         </div>
+                                        <!-- في جدول الصفوف، في عمود الإجراءات، أضف هذا الزر -->
+
+<!-- <div class="btn-group btn-group-sm" role="group"> -->
+    <!-- الأزرار الموجودة -->
+    <!-- <a href="{{ route('grades.show', $grade) }}" 
+       class="btn btn-outline-info" 
+       title="عرض">
+        <i class="fas fa-eye"></i>
+    </a>
+     -->
+    <!-- زر إدارة المواد - جديد -->
+    <!-- <a href="{{ route('grades.manage-subjects', $grade) }}" 
+       class="btn btn-outline-success" 
+       title="إدارة المواد">
+        <i class="fas fa-book"></i>
+    </a>
+    
+    <a href="{{ route('grades.edit', $grade) }}" 
+       class="btn btn-outline-primary" 
+       title="تعديل">
+        <i class="fas fa-edit"></i>
+    </a> -->
+    
+    <!-- باقي الأزرار -->
+<!-- </div> -->
+
+<!-- أو يمكنك إضافة عمود منفصل للمواد -->
+<td class="text-center">
+    <a href="{{ route('grades.manage-subjects', $grade) }}" 
+       class="btn btn-sm btn-outline-primary">
+        <i class="fas fa-book ml-1"></i>
+        المواد ({{ $grade->subjects->count() }})
+    </a>
+</td>
                                     </td>
                                 </tr>
                                 @endforeach

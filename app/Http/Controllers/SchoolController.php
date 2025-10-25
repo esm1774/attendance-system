@@ -73,6 +73,8 @@ public function index(Request $request)
                 'is_active' => $validated['is_active'] ?? true,
             ]);
         });
+        $class->subjects()->sync($request->subjects);
+
 
         return redirect()->route('schools.index')
             ->with('success', 'تم إنشاء المدرسة بنجاح.');

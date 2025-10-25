@@ -200,10 +200,11 @@
             },
             "responsive": true,
             "autoWidth": false,
-            "paging": false, // نعطل الترقيم لأننا نستخدم pagination الخاص بـ Laravel
-            "searching": false, // نعطل البحث لأن لدينا نموذج بحث مخصص
+            "paging": false,
+            "searching": false,
             "info": false
         });
     });
 </script>
+
 @endsection

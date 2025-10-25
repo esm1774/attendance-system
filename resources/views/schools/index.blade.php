@@ -217,4 +217,18 @@
         }, 5000);
     });
 </script>
+<script>
+    $(document).ready(function() {
+        $('.table').DataTable({
+            "language": {
+                "url": "//cdn.datatables.net/plug-ins/1.10.25/i18n/Arabic.json"
+            },
+            "responsive": true,
+            "autoWidth": false,
+            "paging": false,
+            "searching": false,
+            "info": false
+        });
+    });
+</script>
 @endsection

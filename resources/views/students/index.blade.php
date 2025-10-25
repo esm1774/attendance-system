@@ -125,7 +125,7 @@
                     </div>
 
                     <div class="table-responsive">
-                        <table class="table table-hover table-striped align-middle text-center" id="studentsTable">
+                        <table class="table table-hover table-striped text-center" id="studentsTable">
                             <thead>
                                 <tr>
                                     <th style="width: 50px;" class="text-center">#</th>
@@ -293,6 +293,20 @@
         setTimeout(function() {
             $('.alert').fadeOut('slow');
         }, 5000);
+    });
+</script>
+<script>
+    $(document).ready(function() {
+        $('.table').DataTable({
+            "language": {
+                "url": "//cdn.datatables.net/plug-ins/1.10.25/i18n/Arabic.json"
+            },
+            "responsive": true,
+            "autoWidth": false,
+            "paging": false,
+            "searching": false,
+            "info": false
+        });
     });
 </script>
 @endsection

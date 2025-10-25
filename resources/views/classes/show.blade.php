@@ -34,8 +34,8 @@
                                     <td>{{ $class->name_ar }}</td>
                                 </tr>
                                 <tr>
-                                    <th>المسار الكامل:</th>
-                                    <td>{{ $class->full_path_ar }}</td>
+                                    <th>الصف الدراسي:</th>
+                                    <td>{{ $class->grade->name_ar ?? 'غير محدد' }}</td>
                                 </tr>
                                 <tr>
                                     <th>رقم القاعة:</th>
@@ -109,64 +109,92 @@
                     </div>
                     @endif
 
-                    <!-- قسم الطلاب (سيتم إضافته لاحقاً) -->
+                    <!-- قسم الطلاب -->
                     <div class="row mt-4">
                         <div class="col-12">
                             <div class="card">
-                                <div class="card-header bg-success text-white">
+                                <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
                                     <h5 class="card-title mb-0">
                                         <i class="fas fa-users"></i> الطلاب
                                     </h5>
+                                    <span class="badge bg-light text-dark">{{ $class->students->count() }} طالب</span>
                                 </div>
-                                <div class="card-body text-center">
-                                    @if($class->students_count > 0)
-                                        <div class="alert alert-success">
-                                            <i class="fas fa-check-circle"></i>
-                                            يوجد {{ $class->students_count }} طالب في هذا الفصل
+                                <div class="card-body">
+                                    @if($class->students->count() > 0)
+                                        <div class="table-responsive">
+                                            <table class="table table-bordered table-striped">
+                                                <thead class="bg-light">
+                                                    <tr>
+                                                        <th>#</th>
+                                                        <th>اسم الطالب</th>
+                                                        <th>الجنسية</th>
+                                                        <th>تاريخ الميلاد</th>
+                                                        <th>رقم الجوال</th>
+                                                        <th>الحالة</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    @foreach($class->students as $index => $student)
+                                                        <tr>
+                                                            <td>{{ $index + 1 }}</td>
+                                                            <td>{{ $student->full_name }}</td>
+                                                            <td>{{ $student->nationality ?? 'غير محدد' }}</td>
+                                                            <td>{{ $student->birth_date ?? 'غير محدد' }}</td>
+                                                            <td>{{ $student->phone ?? '-' }}</td>
+                                                            <td>
+                                                                <span class="badge badge-{{ $student->is_active ? 'success' : 'secondary' }}">
+                                                                    {{ $student->is_active ? 'نشط' : 'غير نشط' }}
+                                                                </span>
+                                                            </td>
+                                                        </tr>
+                                                    @endforeach
+                                                </tbody>
+                                            </table>
                                         </div>
-                                        <a href="#" class="btn btn-outline-success">
-                                            <i class="fas fa-eye"></i> عرض الطلاب
-                                        </a>
                                     @else
-                                        <div class="alert alert-warning">
+                                        <div class="alert alert-warning text-center">
                                             <i class="fas fa-exclamation-triangle"></i>
                                             لا يوجد طلاب في هذا الفصل حالياً.
                                         </div>
-                                        <a href="#" class="btn btn-outline-primary">
-                                            <i class="fas fa-plus"></i> إضافة طلاب
-                                        </a>
                                     @endif
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- قسم المواد الدراسية (سيتم إضافته لاحقاً) -->
+                    <!-- قسم المواد الدراسية -->
                     <div class="row mt-4">
                         <div class="col-12">
                             <div class="card">
-                                <div class="card-header bg-info text-white">
+                                <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
                                     <h5 class="card-title mb-0">
                                         <i class="fas fa-book"></i> المواد الدراسية
                                     </h5>
+                                    <span class="badge bg-light text-dark">{{ $class->subjects->count() }} مادة</span>
                                 </div>
-                                <div class="card-body text-center">
+                                <div class="card-body">
                                     @if($class->subjects->count() > 0)
-                                        <div class="alert alert-success">
-                                            <i class="fas fa-check-circle"></i>
-                                            يدرس الفصل {{ $class->subjects->count() }} مادة
+                                        <div class="row">
+                                            @foreach($class->subjects as $subject)
+                                                <div class="col-md-4 mb-3">
+                                                    <div class="card h-100 border-info">
+                                                        <div class="card-body">
+                                                            <h5 class="card-title text-info">
+                                                                <i class="fas fa-book-open"></i> {{ $subject->name_ar }}
+                                                            </h5>
+                                                            <p class="mb-1"><strong>رمز المادة:</strong> {{ $subject->code }}</p>
+                                                            <p class="mb-1"><strong>النوع:</strong> {{ $subject->type }}</p>
+                                                            <p class="mb-0"><strong>الوصف:</strong> {{ $subject->description ?? '—' }}</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            @endforeach
                                         </div>
-                                        <a href="#" class="btn btn-outline-info">
-                                            <i class="fas fa-eye"></i> عرض المواد
-                                        </a>
                                     @else
-                                        <div class="alert alert-info">
+                                        <div class="alert alert-info text-center">
                                             <i class="fas fa-info-circle"></i>
                                             لم يتم إضافة مواد دراسية لهذا الفصل بعد.
                                         </div>
-                                        <a href="#" class="btn btn-outline-primary">
-                                            <i class="fas fa-plus"></i> إضافة مواد
-                                        </a>
                                     @endif
                                 </div>
                             </div>

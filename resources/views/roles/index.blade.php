@@ -109,7 +109,11 @@
             },
             "responsive": true,
             "autoWidth": false,
+            "paging": false,
+            "searching": false,
+            "info": false
         });
     });
 </script>
+
 @endsection

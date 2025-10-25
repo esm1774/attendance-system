@@ -60,6 +60,7 @@ class Student extends Model
     }
 
     /**
+ 
      * Accessors
      */
     public function getAgeAttribute()
@@ -134,4 +135,10 @@ class Student extends Model
     {
         return $query->where('class_id', $classId);
     }
+
+    public function subjects()
+{
+    return $this->class ? $this->class->subjects : collect([]);
+}
+
 }

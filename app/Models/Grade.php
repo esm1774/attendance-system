@@ -45,10 +45,10 @@ class Grade extends Model
     /**
      * العلاقة: الصف تابع لمرحلة
      */
-    public function stage(): BelongsTo
-    {
-        return $this->belongsTo(Stage::class);
-    }
+    // public function stage(): BelongsTo
+    // {
+    //     return $this->belongsTo(Stage::class);
+    // }
 
     /**
      * العلاقة: الصف له العديد من الفصول
@@ -59,6 +59,16 @@ class Grade extends Model
     }
 
     /**
+ * العلاقة مع المواد
+ */
+// public function subjects()
+// {
+//     return $this->belongsToMany(Subject::class, 'grade_subject')
+//         ->withPivot('is_required')
+//         ->withTimestamps();
+// }
+
+    /**
      * العلاقة: الصف له العديد من الطلاب
      */
     public function students(): HasMany
@@ -66,21 +76,9 @@ class Grade extends Model
         return $this->hasMany(Student::class);
     }
 
-    /**
-     * نطاق الاستعلام للصفوف النشطة
-     */
-    public function scopeActive($query)
-    {
-        return $query->where('is_active', true);
-    }
+   
 
-    /**
-     * نطاق الاستعلام للصفوف مرتبة
-     */
-    public function scopeOrdered($query)
-    {
-        return $query->orderBy('order');
-    }
+ 
 
     /**
      * نطاق الاستعلام للبحث بالاسم أو الرمز
@@ -172,5 +170,88 @@ class Grade extends Model
     public function getFullPathArAttribute(): string
     {
         return $this->stage->name_ar . ' - ' . $this->name_ar;
+    }
+
+
+ 
+
+
+    // ==================== العلاقات ====================
+    
+    /**
+     * العلاقة مع المرحلة
+     */
+    public function stage()
+    {
+        return $this->belongsTo(Stage::class);
+    }
+
+    /**
+     * العلاقة مع الفصول
+     */
+    public function schoolClasses()
+    {
+        return $this->hasMany(SchoolClass::class);
+    }
+
+    /**
+     * العلاقة مع المواد (Many to Many)
+     */
+    public function subjects()
+    {
+        return $this->belongsToMany(Subject::class, 'grade_subject')
+            ->withPivot('is_required', 'weekly_hours')
+            ->withTimestamps();
+    }
+
+    /**
+     * الحصول على المواد الإجبارية فقط
+     */
+    public function requiredSubjects()
+    {
+        return $this->belongsToMany(Subject::class, 'grade_subject')
+            ->wherePivot('is_required', true)
+            ->withPivot('weekly_hours')
+            ->withTimestamps();
+    }
+
+    /**
+     * الحصول على المواد الاختيارية فقط
+     */
+    public function optionalSubjects()
+    {
+        return $this->belongsToMany(Subject::class, 'grade_subject')
+            ->wherePivot('is_required', false)
+            ->withPivot('weekly_hours')
+            ->withTimestamps();
+    }
+
+    // ==================== Scopes ====================
+    
+    /**
+     * الصفوف النشطة فقط
+     */
+    public function scopeActive($query)
+    {
+        return $query->where('is_active', true);
+    }
+
+    /**
+     * فلترة حسب المرحلة
+     */
+    public function scopeByStage($query, $stageId)
+    {
+        if ($stageId) {
+            return $query->where('stage_id', $stageId);
+        }
+        return $query;
+    }
+
+    /**
+     * ترتيب حسب order
+     */
+    public function scopeOrdered($query)
+    {
+        return $query->orderBy('order');
     }
 }

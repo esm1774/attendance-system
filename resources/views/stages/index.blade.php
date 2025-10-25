@@ -77,7 +77,7 @@
                                     <th>#</th>
                                     <th>الترتيب</th>
                                     <th>اسم المرحلة</th>
-                                    <th>الاسم بالعربية</th>
+                                    
                                     <th>المدرسة</th>
                                     <th>نطاق العمر</th>
                                     <th>الصفوف</th>
@@ -94,7 +94,6 @@
                                         <span class="badge badge-secondary">{{ $stage->order }}</span>
                                     </td>
                                     <td>{{ $stage->name }}</td>
-                                    <td>{{ $stage->name_ar }}</td>
                                     <td>
                                         <span class="badge badge-info">{{ $stage->school->name_ar }}</span>
                                     </td>

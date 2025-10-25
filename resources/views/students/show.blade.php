@@ -190,6 +190,92 @@
                             </div>
                         </div>
                     </div>
+                    <!-- المواد الدراسية -->
+<!-- استبدل قسم المواد في صفحة عرض الطالب بهذا الكود -->
+
+<!-- المواد الدراسية -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0" style="color: #ffffff;">
+                    <i class="fas fa-book ml-2"></i>
+                    المواد الدراسية ({{ $student->class->grade->subjects->count() }})
+                </h5>
+            </div>
+            <div class="card-body">
+                @if($student->class->grade->subjects->count() > 0)
+                    <div class="row">
+                        @foreach($student->class->grade->subjects as $subject)
+                            <div class="col-md-4 mb-3">
+                                <div class="card h-100 border-{{ $subject->pivot->is_required ? 'primary' : 'secondary' }}">
+                                    <div class="card-body">
+                                        <div class="d-flex align-items-start">
+                                            <div class="flex-shrink-0">
+                                                <i class="fas fa-book fa-2x text-{{ $subject->pivot->is_required ? 'primary' : 'secondary' }}"></i>
+                                            </div>
+                                            <div class="flex-grow-1 ms-3">
+                                                <h6 class="mb-1">{{ $subject->name_ar }}</h6>
+                                                <div class="d-flex gap-2 flex-wrap">
+                                                    @if($subject->pivot->is_required)
+                                                        <span class="badge bg-primary">إجبارية</span>
+                                                    @else
+                                                        <span class="badge bg-secondary">اختيارية</span>
+                                                    @endif
+                                                    
+                                                    @if($subject->pivot->weekly_hours)
+                                                        <span class="badge bg-info">
+                                                            <i class="fas fa-clock ml-1"></i>
+                                                            {{ $subject->pivot->weekly_hours }} حصة/أسبوع
+                                                        </span>
+                                                    @endif
+                                                </div>
+                                                
+                                                @if($subject->code)
+                                                    <small class="text-muted d-block mt-1">
+                                                        كود: {{ $subject->code }}
+                                                    </small>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+
+                    <!-- ملخص المواد -->
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <div class="alert alert-primary mb-0">
+                                <i class="fas fa-check-circle ml-1"></i>
+                                <strong>المواد الإجبارية:</strong> 
+                                {{ $student->class->grade->requiredSubjects->count() }}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="alert alert-secondary mb-0">
+                                <i class="fas fa-info-circle ml-1"></i>
+                                <strong>المواد الاختيارية:</strong> 
+                                {{ $student->class->grade->optionalSubjects->count() }}
+                            </div>
+                        </div>
+                    </div>
+                @else
+                    <div class="text-center text-muted py-5">
+                        <i class="fas fa-inbox fa-3x mb-3"></i>
+                        <h5>لم يتم تحديد مواد لهذا الصف الدراسي</h5>
+                        <p class="mb-3">يجب تحديد المواد الدراسية للصف {{ $student->class->grade->name_ar }}</p>
+                        <a href="{{ route('grades.manage-subjects', $student->class->grade) }}" 
+                           class="btn btn-primary">
+                            <i class="fas fa-plus ml-1"></i> إضافة مواد للصف
+                        </a>
+                    </div>
+                @endif
+            </div>
+        </div>
+    </div>
+</div>
 
                     <!-- الملاحظات العامة -->
                     @if($student->notes)
@@ -210,61 +296,132 @@
                     @endif
 
                     <!-- الإحصائيات -->
-                    <div class="row mt-4">
-                        <div class="col-12">
-                            <div class="card">
-                                <div class="card-header bg-primary text-white">
-                                    <h5 class="card-title mb-0">
-                                        <i class="fas fa-chart-bar"></i> الإحصائيات
-                                    </h5>
-                                </div>
-                                <div class="card-body">
-                                    <div class="row text-center">
-                                        <div class="col-md-3">
-                                            <div class="info-box bg-info">
-                                                <span class="info-box-icon"><i class="fas fa-calendar-check"></i></span>
-                                                <div class="info-box-content">
-                                                    <span class="info-box-text">الحضور</span>
-                                                    <span class="info-box-number">0</span>
-                                                    <small>آخر 30 يوم</small>
-                                                </div>
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-chart-bar"></i> الإحصائيات
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <!-- الحضور -->
+                    <div class="col-md-3">
+                        <div class="info-box bg-info">
+                            <span class="info-box-icon"><i class="fas fa-calendar-check"></i></span>
+                            <div class="info-box-content">
+                                <span class="info-box-text">الحضور</span>
+                                <span class="info-box-number">
+                                    @php
+                                        $attendanceCount = $student->attendances()
+                                            ->where('attendance_date', '>=', now()->subDays(30))
+                                            ->where('status', 'present')
+                                            ->count();
+                                    @endphp
+                                    {{ $attendanceCount }}
+                                </span>
+                                <small>آخر 30 يوم</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- المعدل (سيتم تفعيله لاحقاً) -->
+                    <div class="col-md-3">
+                        <div class="info-box bg-success">
+                            <span class="info-box-icon"><i class="fas fa-chart-line"></i></span>
+                            <div class="info-box-content">
+                                <span class="info-box-text">المعدل</span>
+                                <span class="info-box-number">-</span>
+                                <small>قريباً</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- عدد المواد -->
+                    <div class="col-md-3">
+                        <div class="info-box bg-warning">
+                            <span class="info-box-icon"><i class="fas fa-book"></i></span>
+                            <div class="info-box-content">
+                                <span class="info-box-text">المواد</span>
+                                <span class="info-box-number">{{ $student->class->grade->subjects->count() }}</span>
+                                <small>المسجلة</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- الغياب -->
+                    <div class="col-md-3">
+                        <div class="info-box bg-danger">
+                            <span class="info-box-icon"><i class="fas fa-exclamation-triangle"></i></span>
+                            <div class="info-box-content">
+                                <span class="info-box-text">الغياب</span>
+                                <span class="info-box-number">
+                                    @php
+                                        $absenceCount = $student->attendances()
+                                            ->where('attendance_date', '>=', now()->startOfMonth())
+                                            ->whereIn('status', ['absent', 'absent_excused'])
+                                            ->count();
+                                    @endphp
+                                    {{ $absenceCount }}
+                                </span>
+                                <small>هذا الشهر</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- تفاصيل إضافية -->
+                <div class="row mt-3">
+                    <div class="col-md-12">
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <h6 class="mb-3"><i class="fas fa-info-circle ml-1"></i> تفاصيل إضافية</h6>
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <strong>نسبة الحضور:</strong>
+                                        @php
+                                            $totalDays = $student->attendances()
+                                                ->where('attendance_date', '>=', now()->startOfMonth())
+                                                ->count();
+                                            $presentDays = $student->attendances()
+                                                ->where('attendance_date', '>=', now()->startOfMonth())
+                                                ->where('status', 'present')
+                                                ->count();
+                                            $attendanceRate = $totalDays > 0 ? round(($presentDays / $totalDays) * 100, 2) : 0;
+                                        @endphp
+                                        <div class="progress mt-2">
+                                            <div class="progress-bar bg-{{ $attendanceRate >= 80 ? 'success' : ($attendanceRate >= 60 ? 'warning' : 'danger') }}" 
+                                                 style="width: {{ $attendanceRate }}%">
+                                                {{ $attendanceRate }}%
                                             </div>
                                         </div>
-                                        <div class="col-md-3">
-                                            <div class="info-box bg-success">
-                                                <span class="info-box-icon"><i class="fas fa-chart-line"></i></span>
-                                                <div class="info-box-content">
-                                                    <span class="info-box-text">المعدل</span>
-                                                    <span class="info-box-number">-</span>
-                                                    <small>هذا الفصل</small>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-3">
-                                            <div class="info-box bg-warning">
-                                                <span class="info-box-icon"><i class="fas fa-book"></i></span>
-                                                <div class="info-box-content">
-                                                    <span class="info-box-text">المواد</span>
-                                                    <span class="info-box-number">0</span>
-                                                    <small>المسجلة</small>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-3">
-                                            <div class="info-box bg-danger">
-                                                <span class="info-box-icon"><i class="fas fa-exclamation-triangle"></i></span>
-                                                <div class="info-box-content">
-                                                    <span class="info-box-text">الغياب</span>
-                                                    <span class="info-box-number">0</span>
-                                                    <small>هذا الشهر</small>
-                                                </div>
-                                            </div>
-                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <strong>إجمالي أيام الدراسة:</strong>
+                                        <p class="mb-0 mt-2">{{ $totalDays }} يوم</p>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <strong>التأخيرات:</strong>
+                                        @php
+                                            $lateCount = $student->attendances()
+                                                ->where('attendance_date', '>=', now()->startOfMonth())
+                                                ->where('status', 'late')
+                                                ->count();
+                                        @endphp
+                                        <p class="mb-0 mt-2">
+                                            <span class="badge badge-warning">{{ $lateCount }} مرة</span>
+                                        </p>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
                 </div>
                 <div class="card-footer">
                     <a href="{{ route('students.edit', $student) }}" class="btn btn-primary">

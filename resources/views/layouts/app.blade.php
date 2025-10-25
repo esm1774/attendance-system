@@ -202,6 +202,13 @@
                                         <i class="fas fa-user-tag"></i> الأدوار والصلاحيات
                                     </a>
                                 </li>
+                                <!-- قائمة المعلمين -->
+                            <li>
+                                <a class="dropdown-item" href="{{ route('teachers.index') }}" >
+                                    <i class="fas fa-chalkboard-teacher nav-icon"></i>
+                                    المعلمين
+                                </a>
+                            </li>
                             </ul>
                         </li>
                         

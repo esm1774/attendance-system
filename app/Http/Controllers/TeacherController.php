@@ -193,7 +193,40 @@ class TeacherController extends Controller
                     throw new \Exception('فشل ربط الفصول: ' . $e->getMessage());
                 }
             }
-
+            //---------------------------------
+            // إنشاء حساب مستخدم للمعلم مع دور "معلم"
+            try {
+                // التحقق من وجود دور المعلم
+                $teacherRole = \App\Models\Role::where('name', 'teacher')
+                    ->orWhere('name', 'معلم')
+                    ->first();
+                
+                if ($teacherRole) {
+                    // إنشاء حساب مستخدم للمعلم
+                    $user = \App\Models\User::create([
+                        'name' => $teacher->name,
+                        'email' => $teacher->email,
+                        'password' => \Hash::make($teacher->national_id), // استخدام رقم الهوية ككلمة مرور افتراضية
+                        'is_active' => true,
+                    ]);
+                    
+                    // ربط المستخدم بدور المعلم
+                    $user->roles()->attach($teacherRole->id);
+                    
+                    // ربط المعلم بالمستخدم (إذا كان لديك حقل user_id في جدول teachers)
+                    if (\Schema::hasColumn('teachers', 'user_id')) {
+                        $teacher->update(['user_id' => $user->id]);
+                    }
+                    
+                    Log::info("تم إنشاء حساب مستخدم للمعلم - User ID: {$user->id}");
+                } else {
+                    Log::warning('دور المعلم غير موجود في قاعدة البيانات');
+                }
+            } catch (\Exception $e) {
+                Log::error('خطأ في إنشاء حساب المستخدم للمعلم: ' . $e->getMessage());
+                // لا نوقف العملية، فقط نسجل الخطأ
+            }
+            //-------------------------------
             DB::commit();
             Log::info('=== تمت عملية إضافة المعلم بنجاح ===');
 
