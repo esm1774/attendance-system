@@ -86,7 +86,7 @@
                                         </tr>
                                         <tr>
                                             <td class="text-muted"><i class="fas fa-calendar ml-1"></i> تاريخ الميلاد:</td>
-                                            <td><strong>{{ $teacher->birth_date->format('Y-m-d') }}</strong></td>
+                                            <td><strong>{{ $teacher->birth_date ? $teacher->birth_date->format('Y-m-d') : 'غير محدد' }}</strong></td>
                                         </tr>
                                         <tr>
                                             <td class="text-muted"><i class="fas fa-venus-mars ml-1"></i> الجنس:</td>
@@ -134,7 +134,7 @@
                                         </tr>
                                         <tr>
                                             <td class="text-muted"><i class="fas fa-school ml-1"></i> المدرسة:</td>
-                                            <td><strong>{{ $teacher->school->name_ar }}</strong></td>
+                                            <td><strong>{{ optional($teacher->school)->name_ar ?? 'غير محدد' }}</strong></td>
                                         </tr>
                                         <tr>
                                             <td class="text-muted"><i class="fas fa-graduation-cap ml-1"></i> المؤهل:</td>
@@ -142,7 +142,7 @@
                                         </tr>
                                         <tr>
                                             <td class="text-muted"><i class="fas fa-calendar-check ml-1"></i> تاريخ التعيين:</td>
-                                            <td><strong>{{ $teacher->hire_date->format('Y-m-d') }}</strong></td>
+                                            <td><strong>{{ $teacher->hire_date ? $teacher->hire_date->format('Y-m-d') : 'غير محدد' }}</strong></td>
                                         </tr>
                                         <tr>
                                             <td class="text-muted"><i class="fas fa-file-contract ml-1"></i> نوع العقد:</td>

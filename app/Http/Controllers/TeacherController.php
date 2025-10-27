@@ -1,47 +1,71 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use App\Models\Teacher;
 use App\Models\School;
-use App\Models\Subject;
-use App\Models\SchoolClass;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage; // تمت إضافته لأنه مستخدم في الدوال
+use Illuminate\Support\Facades\Validator; // تمت إضافته لأنه مستخدم في الدوال
+use Maatwebsite\Excel\Facades\Excel;
+use App\Imports\TeachersImport;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use App\Models\Subject; // تمت إضافته لأنه مستخدم في الدوال
+use App\Models\SchoolClass; // تمت إضافته لأنه مستخدم في الدوال
 
 class TeacherController extends Controller
 {
     /**
      * عرض قائمة المعلمين
      */
-    public function index(Request $request)
-    {
-        $teachers = Teacher::with(['school', 'subjects'])
-            ->search($request->search)
+    /**
+ * عرض قائمة المعلمين
+ */
+public function index(Request $request)
+{
+    // تحقق إذا طلب المستخدم عرض المحذوفين
+    $showTrashed = $request->has('trashed') && $request->trashed == 1;
+
+    $teachersQuery = Teacher::with(['school', 'subjects']);
+
+    // تطبيق البحث والفلاتر
+    if (!$showTrashed) {
+        $teachersQuery = $teachersQuery->search($request->search)
             ->bySchool($request->school_id)
             ->bySpecialization($request->specialization)
             ->byGender($request->gender)
             ->byStatus($request->status)
             ->byContractType($request->contract_type)
-            ->when($request->is_active !== null, function($query) use ($request) {
+            ->when($request->is_active !== null, function ($query) use ($request) {
                 if ($request->is_active == 'active') {
                     $query->where('is_active', true);
                 } elseif ($request->is_active == 'inactive') {
                     $query->where('is_active', false);
                 }
-            })
-            ->orderBy('created_at', 'desc')
-            ->paginate(10)
-            ->withQueryString();
-
-        // للفلاتر
-        $schools = School::where('is_active', true)->get();
-        $specializations = Teacher::select('specialization')->distinct()->pluck('specialization');
-
-        return view('teachers.index', compact('teachers', 'schools', 'specializations'));
+            });
+    } else {
+        // استعلام خاص للمحذوفين
+        $teachersQuery = $teachersQuery->onlyTrashed();
     }
+
+    $teachers = $teachersQuery->orderBy('created_at', 'desc')
+        ->paginate(10)
+        ->withQueryString();
+
+    // للفلاتر
+    $schools = School::where('is_active', true)->get();
+    $specializations = Teacher::select('specialization')->distinct()->pluck('specialization');
+
+    return view('teachers.index', compact('teachers', 'schools', 'specializations', 'showTrashed'));
+}
+
+
 
     /**
      * عرض نموذج إضافة معلم جديد
@@ -279,121 +303,120 @@ class TeacherController extends Controller
      * تحديث بيانات المعلم
      */
     public function update(Request $request, Teacher $teacher)
-{
-    DB::beginTransaction();
-    
-    try {
-        Log::info('=== بدء عملية تحديث المعلم ID: ' . $teacher->id . ' ===');
-        Log::info('البيانات المستلمة:', $request->all());
+    {
+        DB::beginTransaction();
+        
+        try {
+            Log::info('=== بدء عملية تحديث المعلم ID: ' . $teacher->id . ' ===');
+            Log::info('البيانات المستلمة:', $request->all());
 
-        // التحقق من صحة البيانات
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255',
-            'national_id' => 'required|string|max:20|unique:teachers,national_id,' . $teacher->id,
-            'birth_date' => 'required|date|before:today',
-            'gender' => 'required|in:male,female',
-            'nationality' => 'required|string|max:100',
-            'photo' => 'nullable|image|mimes:jpeg,jpg,png|max:2048',
-            'phone' => 'required|string|max:20',
-            'email' => 'required|email|max:255|unique:teachers,email,' . $teacher->id,
-            'address' => 'nullable|string',
-            'employee_number' => 'required|string|max:50|unique:teachers,employee_number,' . $teacher->id,
-            'specialization' => 'required|string|max:255',
-            'qualification' => 'required|string|max:255',
-            'hire_date' => 'required|date',
-            'contract_type' => 'required|in:permanent,temporary,substitute',
-            'salary' => 'nullable|numeric|min:0',
-            'department' => 'nullable|string|max:255',
-            'school_id' => 'required|exists:schools,id',
-            'subjects' => 'nullable|array',
-            'subjects.*' => 'exists:subjects,id',
-            'classes' => 'nullable|array',
-            'classes.*' => 'exists:school_classes,id',
-            'status' => 'required|in:active,on_leave,retired,transferred',
-            'is_active' => 'nullable|boolean',
-            'notes' => 'nullable|string',
-        ]);
+            // التحقق من صحة البيانات
+            $validator = Validator::make($request->all(), [
+                'name' => 'required|string|max:255',
+                'national_id' => 'required|string|max:20|unique:teachers,national_id,' . $teacher->id,
+                'birth_date' => 'required|date|before:today',
+                'gender' => 'required|in:male,female',
+                'nationality' => 'required|string|max:100',
+                'photo' => 'nullable|image|mimes:jpeg,jpg,png|max:2048',
+                'phone' => 'required|string|max:20',
+                'email' => 'required|email|max:255|unique:teachers,email,' . $teacher->id,
+                'address' => 'nullable|string',
+                'employee_number' => 'required|string|max:50|unique:teachers,employee_number,' . $teacher->id,
+                'specialization' => 'required|string|max:255',
+                'qualification' => 'required|string|max:255',
+                'hire_date' => 'required|date',
+                'contract_type' => 'required|in:permanent,temporary,substitute',
+                'salary' => 'nullable|numeric|min:0',
+                'department' => 'nullable|string|max:255',
+                'school_id' => 'required|exists:schools,id',
+                'subjects' => 'nullable|array',
+                'subjects.*' => 'exists:subjects,id',
+                'classes' => 'nullable|array',
+                'classes.*' => 'exists:school_classes,id',
+                'status' => 'required|in:active,on_leave,retired,transferred',
+                'is_active' => 'nullable|boolean',
+                'notes' => 'nullable|string',
+            ]);
 
-        if ($validator->fails()) {
-            Log::error('فشل التحقق من البيانات:', $validator->errors()->toArray());
+            if ($validator->fails()) {
+                Log::error('فشل التحقق من البيانات:', $validator->errors()->toArray());
+                return back()
+                    ->withErrors($validator)
+                    ->withInput()
+                    ->with('error', 'يرجى التحقق من البيانات المدخلة');
+            }
+
+            $data = $validator->validated();
+            $data['is_active'] = $request->has('is_active') ? true : false;
+
+            // رفع الصورة الجديدة إن وجدت
+            if ($request->hasFile('photo')) {
+                if ($teacher->photo && Storage::disk('public')->exists($teacher->photo)) {
+                    Storage::disk('public')->delete($teacher->photo);
+                    Log::info('تم حذف الصورة القديمة');
+                }
+
+                $photoPath = $request->file('photo')->store('teachers', 'public');
+                $data['photo'] = $photoPath;
+                Log::info('تم رفع الصورة الجديدة: ' . $photoPath);
+            }
+
+            // استخراج العلاقات
+            $subjects = $data['subjects'] ?? [];
+            $classes = $request->input('classes', []);
+            unset($data['subjects'], $data['classes']);
+
+            // تحديث بيانات المعلم الأساسية
+            $teacher->update($data);
+            Log::info('تم تحديث بيانات المعلم بنجاح');
+
+            /** ======================
+             * تحديث المواد الدراسية
+             * ====================== */
+            try {
+                $teacher->subjects()->sync($subjects);
+                Log::info('تم تحديث المواد الدراسية');
+            } catch (\Exception $e) {
+                Log::error('خطأ في تحديث المواد: ' . $e->getMessage());
+                throw new \Exception('فشل تحديث المواد: ' . $e->getMessage());
+            }
+
+            /** ======================
+             * تحديث الفصول الدراسية
+             * ====================== */
+            try {
+                $pivotData = [];
+                foreach ($classes as $classId) {
+                    $pivotData[$classId] = [
+                        'subject_id' => $request->input("class_subject_{$classId}"),
+                        'is_class_teacher' => $request->has("is_class_teacher_{$classId}") ? 1 : 0,
+                    ];
+                }
+                $teacher->schoolClasses()->sync($pivotData);
+                Log::info('تم تحديث الفصول الدراسية بنجاح');
+            } catch (\Exception $e) {
+                Log::error('خطأ في تحديث الفصول: ' . $e->getMessage());
+                throw new \Exception('فشل تحديث الفصول: ' . $e->getMessage());
+            }
+
+            DB::commit();
+            Log::info('=== تمت عملية التحديث بنجاح ===');
+
+            return redirect()
+                ->route('teachers.index')
+                ->with('success', 'تم تحديث بيانات المعلم بنجاح');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            Log::error('=== فشلت عملية تحديث المعلم ===');
+            Log::error('رسالة الخطأ: ' . $e->getMessage());
+
             return back()
-                ->withErrors($validator)
                 ->withInput()
-                ->with('error', 'يرجى التحقق من البيانات المدخلة');
+                ->with('error', 'حدث خطأ أثناء تحديث المعلم: ' . $e->getMessage());
         }
-
-        $data = $validator->validated();
-        $data['is_active'] = $request->has('is_active') ? true : false;
-
-        // رفع الصورة الجديدة إن وجدت
-        if ($request->hasFile('photo')) {
-            if ($teacher->photo && Storage::disk('public')->exists($teacher->photo)) {
-                Storage::disk('public')->delete($teacher->photo);
-                Log::info('تم حذف الصورة القديمة');
-            }
-
-            $photoPath = $request->file('photo')->store('teachers', 'public');
-            $data['photo'] = $photoPath;
-            Log::info('تم رفع الصورة الجديدة: ' . $photoPath);
-        }
-
-        // استخراج العلاقات
-        $subjects = $data['subjects'] ?? [];
-        $classes = $request->input('classes', []);
-        unset($data['subjects'], $data['classes']);
-
-        // تحديث بيانات المعلم الأساسية
-        $teacher->update($data);
-        Log::info('تم تحديث بيانات المعلم بنجاح');
-
-        /** ======================
-         * تحديث المواد الدراسية
-         * ====================== */
-        try {
-            $teacher->subjects()->sync($subjects);
-            Log::info('تم تحديث المواد الدراسية');
-        } catch (\Exception $e) {
-            Log::error('خطأ في تحديث المواد: ' . $e->getMessage());
-            throw new \Exception('فشل تحديث المواد: ' . $e->getMessage());
-        }
-
-        /** ======================
-         * تحديث الفصول الدراسية
-         * ====================== */
-        try {
-            $pivotData = [];
-            foreach ($classes as $classId) {
-                $pivotData[$classId] = [
-                    'subject_id' => $request->input("class_subject_{$classId}"),
-                    'is_class_teacher' => $request->has("is_class_teacher_{$classId}") ? 1 : 0,
-                ];
-            }
-            $teacher->schoolClasses()->sync($pivotData);
-            Log::info('تم تحديث الفصول الدراسية بنجاح');
-        } catch (\Exception $e) {
-            Log::error('خطأ في تحديث الفصول: ' . $e->getMessage());
-            throw new \Exception('فشل تحديث الفصول: ' . $e->getMessage());
-        }
-
-        DB::commit();
-        Log::info('=== تمت عملية التحديث بنجاح ===');
-
-        return redirect()
-            ->route('teachers.index')
-            ->with('success', 'تم تحديث بيانات المعلم بنجاح');
-
-    } catch (\Exception $e) {
-        DB::rollBack();
-
-        Log::error('=== فشلت عملية تحديث المعلم ===');
-        Log::error('رسالة الخطأ: ' . $e->getMessage());
-
-        return back()
-            ->withInput()
-            ->with('error', 'حدث خطأ أثناء تحديث المعلم: ' . $e->getMessage());
     }
-}
-
 
     /**
      * حذف المعلم
@@ -426,6 +449,16 @@ class TeacherController extends Controller
         }
     }
 
+    public function restore($id)
+{
+    $teacher = Teacher::onlyTrashed()->findOrFail($id); // جلب المعلم المحذوف فقط
+    $teacher->restore(); // استعادة المعلم
+
+    return redirect()->route('teachers.index')
+                     ->with('success', 'تم استعادة المعلم بنجاح');
+}
+
+
     /**
      * تبديل حالة النشاط
      */
@@ -448,4 +481,124 @@ class TeacherController extends Controller
                 ->with('error', 'حدث خطأ أثناء تغيير الحالة: ' . $e->getMessage());
         }
     }
+
+    // أضف هذه الدالة في TeacherController.php
+
+    /**
+
+ * تحميل نموذج Excel لاستيراد المعلمين (إصدار محسّن لاستهلاك الذاكرة)
+ */
+public function downloadTemplate(): BinaryFileResponse
+{
+    $spreadsheet = new Spreadsheet();
+    $sheet = $spreadsheet->getActiveSheet();
+    $sheet->setRightToLeft(true); // لجعل النمودج من اليمين لليسار
+
+    // --- إضافة عنوان وتعليمات النموذج ---
+    $sheet->setCellValue('A1', 'نموذج استيراد المعلمين');
+    $sheet->getStyle('A1')->applyFromArray([
+        'font' => ['bold' => true, 'size' => 16],
+        'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
+    ]);
+    $sheet->mergeCells('A1:D1'); // تم تعديل من S إلى D
+
+    $instructionsText = "ملاحظات هامة:\n" .
+        "1. لا تقم بتعديل أسماء الأعمدة أو ترتيبها.\n" .
+        "2. الحقول التي تنتهي بـ * مطلوبة.\n" .
+        "3. استخدم القيم المحددة بالضبط للحقول ذات الخيارات.\n" .
+        "4. سيتم ربط المعلم بمدرسته لاحقاً من صفحة تعديل بيانات المعلم.\n" .
+        "5. احذف صف المثال قبل البدء في الإدخال.";
+    
+    $sheet->setCellValue('A2', $instructionsText);
+    $sheet->getStyle('A2')->getAlignment()->setWrapText(true);
+    $sheet->mergeCells('A2:D2'); // تم تعديل من S إلى D
+    $sheet->getRowDimension(2)->setRowHeight(75);
+
+    // --- تعريف رؤوس الأعمدة ---
+    $rowIndex = 4; // البدء من الصف الرابع بعد التعليمات
+    $headers = [
+        'الاسم الكامل',
+        'رقم الهوية الوطنية',
+        'رقم الجوال',
+        'البريد الإلكتروني',
+    ];
+
+    $sheet->fromArray($headers, null, 'A' . $rowIndex);
+
+    // --- تنسيق رؤوس الأعمدة ---
+    $headerRange = 'A' . $rowIndex . ':D' . $rowIndex;
+    $sheet->getStyle($headerRange)->applyFromArray([
+        'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
+        'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '2980B9']],
+        'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
+    ]);
+
+    // --- إضافة صف بيانات كمثال ---
+    $rowIndex++;
+    $exampleData = [
+        'أحمد محمد السعيد',
+        '1234567890',
+        '0501234567',
+        'ahmed.example@email.com',
+    ];
+    $sheet->fromArray($exampleData, null, 'A' . $rowIndex);
+    
+    // --- تنسيق صف المثال ---
+    $exampleRange = 'A' . $rowIndex . ':D' . $rowIndex;
+    $sheet->getStyle($exampleRange)->applyFromArray([
+        'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'D5F4E6']],
+    ]);
+
+    // --- ضبط عرض الأعمدة يدوياً ---
+    $sheet->getColumnDimension('A')->setWidth(25);
+    $sheet->getColumnDimension('B')->setWidth(20);
+    $sheet->getColumnDimension('C')->setWidth(20);
+    $sheet->getColumnDimension('D')->setWidth(30);
+
+    // حفظ الملف وإرساله للمستخدم
+    $fileName = 'teachers_import_template_' . date('Y-m-d_H-i-s') . '.xlsx';
+    $tempPath = storage_path('app/temp/' . $fileName);
+
+    if (!is_dir(dirname($tempPath))) {
+        mkdir(dirname($tempPath), 0755, true);
+    }
+
+    $writer = new Xlsx($spreadsheet);
+    $writer->save($tempPath);
+
+    return response()->download($tempPath)->deleteFileAfterSend(true);
+}
+
+    /**
+     * استيراد المعلمين من Excel
+     */
+    public function import(Request $request)
+{
+    $request->validate([
+        'file' => 'required|file|mimes:xlsx,xls,csv|max:10240',
+    ], [
+        'file.required' => 'يرجى اختيار ملف للاستيراد',
+        'file.mimes'    => 'يجب أن يكون الملف بصيغة Excel (xlsx, xls) أو CSV',
+        'file.max'      => 'حجم الملف يجب أن لا يتجاوز 10 ميجابايت',
+    ]);
+
+    try {
+        DB::beginTransaction();
+
+        Excel::import(new TeachersImport, $request->file('file'));
+
+        DB::commit();
+
+        return redirect()->route('teachers.index')
+            ->with('success', '✅ تم استيراد بيانات المعلمين بنجاح');
+    } catch (\Exception $e) {
+        DB::rollBack();
+
+        \Log::error('Error importing teachers: ' . $e->getMessage());
+
+        return redirect()->back()
+            ->with('error', '❌ حدث خطأ أثناء استيراد المعلمين: ' . $e->getMessage());
+    }
+}
+
 }

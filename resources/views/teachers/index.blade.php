@@ -22,9 +22,6 @@
                         <button type="button" class="btn btn-info btn-sm" data-bs-toggle="modal" data-bs-target="#importModal">
                             <i class="fas fa-upload ml-1"></i> استيراد معلمين
                         </button>
-                        <a href="{{ route('teachers.export', request()->query()) }}" class="btn btn-warning btn-sm">
-                            <i class="fas fa-file-excel ml-1"></i> تصدير
-                        </a>
                     </div>
                 </div>
                 <div class="card-body">
@@ -36,18 +33,21 @@
                         </div>
                     @endif
 
+                    {{-- أزرار عرض المحذوفين أو العودة --}}
+                    @if($showTrashed)
+                        <a href="{{ route('teachers.index') }}" class="btn btn-secondary mb-3">
+                            العودة للمعلمين الحاليين
+                        </a>
+                    @else
+                        <a href="{{ route('teachers.index', ['trashed' => 1]) }}" class="btn btn-warning mb-3">
+                            عرض المعلمين المحذوفين
+                        </a>
+                    @endif
+
                     @if(session('error'))
                         <div class="alert alert-danger alert-dismissible fade show" role="alert">
                             <i class="fas fa-exclamation-circle me-2"></i>
                             {{ session('error') }}
-                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                        </div>
-                    @endif
-
-                    @if(session('info'))
-                        <div class="alert alert-info alert-dismissible fade show" role="alert">
-                            <i class="fas fa-info-circle me-2"></i>
-                            {{ session('info') }}
                             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                         </div>
                     @endif
@@ -57,93 +57,7 @@
                         <div class="card bg-light">
                             <div class="card-body">
                                 <div class="row g-3">
-                                    <div class="col-md-3">
-                                        <div class="form-group">
-                                            <label class="form-label small mb-1">
-                                                <i class="fas fa-search ml-1"></i> بحث
-                                            </label>
-                                            <input type="text" name="search" class="form-control form-control-sm" 
-                                                   placeholder="ابحث بالاسم، الهوية، أو الرقم الوظيفي" 
-                                                   value="{{ request('search') }}">
-                                        </div>
-                                    </div>
-                                    <div class="col-md-2">
-                                        <div class="form-group">
-                                            <label class="form-label small mb-1">
-                                                <i class="fas fa-school ml-1"></i> المدرسة
-                                            </label>
-                                            <select name="school_id" class="form-select form-select-sm">
-                                                <option value="">جميع المدارس</option>
-                                                @foreach($schools as $school)
-                                                    <option value="{{ $school->id }}" 
-                                                        {{ request('school_id') == $school->id ? 'selected' : '' }}>
-                                                        {{ $school->name_ar }}
-                                                    </option>
-                                                @endforeach
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-2">
-                                        <div class="form-group">
-                                            <label class="form-label small mb-1">
-                                                <i class="fas fa-book ml-1"></i> التخصص
-                                            </label>
-                                            <select name="specialization" class="form-select form-select-sm">
-                                                <option value="">جميع التخصصات</option>
-                                                @foreach($specializations as $specialization)
-                                                    <option value="{{ $specialization }}" 
-                                                        {{ request('specialization') == $specialization ? 'selected' : '' }}>
-                                                        {{ $specialization }}
-                                                    </option>
-                                                @endforeach
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-1">
-                                        <div class="form-group">
-                                            <label class="form-label small mb-1">
-                                                <i class="fas fa-venus-mars ml-1"></i> الجنس
-                                            </label>
-                                            <select name="gender" class="form-select form-select-sm">
-                                                <option value="">الكل</option>
-                                                <option value="male" {{ request('gender') == 'male' ? 'selected' : '' }}>ذكر</option>
-                                                <option value="female" {{ request('gender') == 'female' ? 'selected' : '' }}>أنثى</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-2">
-                                        <div class="form-group">
-                                            <label class="form-label small mb-1">
-                                                <i class="fas fa-flag ml-1"></i> الحالة
-                                            </label>
-                                            <select name="status" class="form-select form-select-sm">
-                                                <option value="">جميع الحالات</option>
-                                                <option value="active" {{ request('status') == 'active' ? 'selected' : '' }}>نشط</option>
-                                                <option value="on_leave" {{ request('status') == 'on_leave' ? 'selected' : '' }}>في إجازة</option>
-                                                <option value="retired" {{ request('status') == 'retired' ? 'selected' : '' }}>متقاعد</option>
-                                                <option value="transferred" {{ request('status') == 'transferred' ? 'selected' : '' }}>منقول</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-1">
-                                        <div class="form-group">
-                                            <label class="form-label small mb-1">
-                                                <i class="fas fa-file-contract ml-1"></i> العقد
-                                            </label>
-                                            <select name="contract_type" class="form-select form-select-sm">
-                                                <option value="">الكل</option>
-                                                <option value="permanent" {{ request('contract_type') == 'permanent' ? 'selected' : '' }}>دائم</option>
-                                                <option value="temporary" {{ request('contract_type') == 'temporary' ? 'selected' : '' }}>مؤقت</option>
-                                                <option value="substitute" {{ request('contract_type') == 'substitute' ? 'selected' : '' }}>بديل</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-1">
-                                        <label class="form-label small mb-1">&nbsp;</label>
-                                        <button type="submit" class="btn btn-primary btn-sm w-100">
-                                            <i class="fas fa-search"></i>
-                                        </button>
-                                    </div>
+                                    <!-- ... نموذج البحث كما هو ... -->
                                 </div>
                             </div>
                         </div>
@@ -167,16 +81,17 @@
                             <thead>
                                 <tr>
                                     <th style="width: 50px;" class="text-center">#</th>
-                                    <th style="width: 60px;" class="text-center">الصورة</th>
                                     <th style="width: 120px;">الرقم الوظيفي</th>
-                                    <th>الاسم الكامل</th>
+                                    <th>اسم المعلم</th>
+                                    <th>البريد الإلكتروني</th>
                                     <th style="width: 120px;">التخصص</th>
-                                    <th style="width: 150px;">المدرسة</th>
-                                    <th style="width: 80px;" class="text-center">الجنس</th>
-                                    <th style="width: 100px;" class="text-center">نوع العقد</th>
+                                    <th style="width: 120px;">المؤهل العلمي</th>
+                                    <th style="width: 100px;" class="text-center">نوع التعيين</th>
+                                    <th style="width: 80px;" class="text-center">المواد</th>
+                                    <th style="width: 80px;" class="text-center">الفصول</th>
                                     <th style="width: 100px;" class="text-center">الحالة</th>
-                                    <th style="width: 100px;" class="text-center">النشاط</th>
-                                    <th style="width: 200px;" class="text-center">الإجراءات</th>
+                                    <th style="width: 120px;">تاريخ التعيين</th>
+                                    <th style="width: 180px;" class="text-center">الإجراءات</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -185,103 +100,91 @@
                                     <td class="text-center">
                                         <small>{{ $loop->iteration + (($teachers->currentPage() - 1) * $teachers->perPage()) }}</small>
                                     </td>
-                                    <td class="text-center">
-                                        @if($teacher->photo)
-                                            <img src="{{ $teacher->photo_url }}" 
-                                                 alt="{{ $teacher->name }}" 
-                                                 class="rounded-circle" 
-                                                 style="width: 40px; height: 40px; object-fit: cover;">
-                                        @else
-                                            <div class="rounded-circle bg-secondary d-inline-flex align-items-center justify-content-center" 
-                                                 style="width: 40px; height: 40px;">
-                                                <i class="fas fa-user text-white"></i>
-                                            </div>
-                                        @endif
-                                    </td>
                                     <td>
-                                        <span class="badge bg-secondary">{{ $teacher->employee_number }}</span>
+                                        <span class="badge bg-info text-white">{{ $teacher->teacher_id }}</span>
                                     </td>
                                     <td>
                                         <strong>{{ $teacher->name }}</strong>
-                                        <br><small class="text-muted">
-                                            <i class="fas fa-id-card ml-1"></i>{{ $teacher->national_id }}
-                                        </small>
-                                        <br><small class="text-muted">
-                                            <i class="fas fa-envelope ml-1"></i>{{ $teacher->email }}
-                                        </small>
-                                    </td>
-                                    <td>
-                                        <span class="badge bg-info text-white">{{ $teacher->specialization }}</span>
-                                        @if($teacher->subjects->count() > 0)
+                                        @if($teacher->phone)
                                             <br><small class="text-muted">
-                                                {{ $teacher->subjects->count() }} مواد
+                                                <i class="fas fa-phone ml-1"></i>{{ $teacher->phone }}
                                             </small>
                                         @endif
                                     </td>
                                     <td>
-                                        <small>{{ $teacher->school->name_ar }}</small>
+                                        <small>{{ $teacher->email }}</small>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-secondary">{{ $teacher->specialization }}</span>
+                                    </td>
+                                    <td>
+                                        <small>{{ $teacher->qualification ?? 'غير محدد' }}</small>
                                     </td>
                                     <td class="text-center">
-                                        <span class="badge bg-light text-dark">
-                                            <i class="fas fa-{{ $teacher->gender == 'male' ? 'mars' : 'venus' }} ml-1"></i>
-                                            {{ $teacher->gender_text }}
+                                        <span class="badge bg-{{ $teacher->employment_type == 'full_time' ? 'success' : ($teacher->employment_type == 'part_time' ? 'warning' : 'info') }}">
+                                            {{ $teacher->employment_type_text }}
                                         </span>
                                     </td>
                                     <td class="text-center">
-                                        <span class="badge bg-secondary">{{ $teacher->contract_type_text }}</span>
+                                        <span class="badge bg-primary">0</span>
                                     </td>
                                     <td class="text-center">
-                                        <span class="badge bg-{{ $teacher->status_color }}">
-                                            {{ $teacher->status_text }}
-                                        </span>
+                                        <span class="badge bg-info text-white">0</span>
                                     </td>
                                     <td class="text-center">
                                         <span class="badge bg-{{ $teacher->is_active ? 'success' : 'danger' }}">
-                                            {{ $teacher->is_active ? 'نشط' : 'غير نشط' }}
+                                            {{ $teacher->is_active ? 'نشط' : 'معطل' }}
                                         </span>
+                                    </td>
+                                    <td>
+                                        <small>{{ $teacher->hire_date ? $teacher->hire_date->format('Y-m-d') : 'غير محدد' }}</small>
                                     </td>
                                     <td class="text-center">
                                         <div class="btn-group btn-group-sm" role="group">
-                                            <a href="{{ route('teachers.show', $teacher) }}" 
-                                               class="btn btn-outline-info" 
-                                               title="عرض">
-                                                <i class="fas fa-eye"></i>
-                                            </a>
-                                            <a href="{{ route('teachers.edit', $teacher) }}" 
-                                               class="btn btn-outline-primary" 
-                                               title="تعديل">
-                                                <i class="fas fa-edit"></i>
-                                            </a>
-                                            <form action="{{ route('teachers.toggle-status', $teacher) }}" method="POST" class="d-inline">
-                                                @csrf
-                                                @method('PATCH')
-                                                <button type="submit" 
-                                                        class="btn btn-outline-{{ $teacher->is_active ? 'warning' : 'success' }}" 
-                                                        title="{{ $teacher->is_active ? 'تعطيل' : 'تفعيل' }}">
-                                                    <i class="fas fa-{{ $teacher->is_active ? 'pause' : 'play' }}"></i>
-                                                </button>
-                                            </form>
-                                            <form action="{{ route('teachers.destroy', $teacher) }}" method="POST" class="d-inline">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit" 
-                                                        class="btn btn-outline-danger" 
-                                                        title="حذف"
-                                                        onclick="return confirm('هل أنت متأكد من حذف هذا المعلم؟ سيتم حذف جميع البيانات المرتبطة به.')">
-                                                    <i class="fas fa-trash"></i>
-                                                </button>
-                                            </form>
+                                            @if($showTrashed)
+                                                {{-- زر الاستعادة --}}
+                                                <form action="{{ route('teachers.restore', $teacher->id) }}" method="POST" class="d-inline">
+                                                    @csrf
+                                                    @method('PATCH')
+                                                    <button type="submit" class="btn btn-outline-success" title="استعادة">
+                                                        <i class="fas fa-undo"></i>
+                                                    </button>
+                                                </form>
+                                            @else
+                                                <a href="{{ route('teachers.show', $teacher) }}" class="btn btn-outline-info" title="عرض">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                                <a href="{{ route('teachers.edit', $teacher) }}" class="btn btn-outline-primary" title="تعديل">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                                <form action="{{ route('teachers.toggle-status', $teacher) }}" method="POST" class="d-inline">
+                                                    @csrf
+                                                    @method('PATCH')
+                                                    <button type="submit" 
+                                                            class="btn btn-outline-{{ $teacher->is_active ? 'warning' : 'success' }}" 
+                                                            title="{{ $teacher->is_active ? 'تعطيل' : 'تفعيل' }}">
+                                                        <i class="fas fa-{{ $teacher->is_active ? 'pause' : 'play' }}"></i>
+                                                    </button>
+                                                </form>
+                                                <form action="{{ route('teachers.destroy', $teacher) }}" method="POST" class="d-inline">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" 
+                                                            class="btn btn-outline-danger" 
+                                                            title="حذف"
+                                                            onclick="return confirm('هل أنت متأكد من حذف هذا المعلم؟')">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </form>
+                                            @endif
                                         </div>
                                     </td>
                                 </tr>
                                 @empty
                                 <tr>
-                                    <td colspan="11" class="text-center py-5">
+                                    <td colspan="12" class="text-center py-5">
                                         <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
                                         <p class="text-muted">لا توجد بيانات للعرض</p>
-                                        <a href="{{ route('teachers.create') }}" class="btn btn-primary btn-sm">
-                                            <i class="fas fa-plus ml-1"></i> إضافة معلم جديد
-                                        </a>
                                     </td>
                                 </tr>
                                 @endforelse
@@ -354,37 +257,14 @@
 @section('scripts')
 <script>
     $(document).ready(function() {
-        // تفعيل tooltips
         var tooltipTriggerList = [].slice.call(document.querySelectorAll('[title]'))
         var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
             return new bootstrap.Tooltip(tooltipTriggerEl)
         });
         
-        // إخفاء التنبيهات تلقائياً
         setTimeout(function() {
             $('.alert').fadeOut('slow');
         }, 5000);
     });
 </script>
-@endsection
-
-@section('styles')
-<style>
-    .table td {
-        vertical-align: middle;
-    }
-    
-    .btn-group-sm > .btn {
-        padding: 0.25rem 0.5rem;
-        font-size: 0.875rem;
-    }
-    
-    .badge {
-        font-weight: 500;
-    }
-    
-    .form-select-sm, .form-control-sm {
-        font-size: 0.875rem;
-    }
-</style>
 @endsection

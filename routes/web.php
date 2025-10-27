@@ -71,6 +71,15 @@ Route::get('teachers/download/template', [TeacherController::class, 'downloadTem
 Route::post('teachers/import', [TeacherController::class, 'import'])->name('teachers.import');
 Route::get('teachers/export', [TeacherController::class, 'export'])->name('teachers.export');
 
+
+
+
+// في قسم المعلمين، أضف:
+Route::get('teachers/template/download', [TeacherController::class, 'downloadTemplate'])->name('teachers.download-template');
+Route::post('teachers/import', [TeacherController::class, 'import'])->name('teachers.import');
+Route::patch('/teachers/{id}/restore', [TeacherController::class, 'restore'])
+    ->name('teachers.restore');
+
 // مسارات إدارة الطلاب
 Route::resource('students', StudentControllerNew::class);
 Route::patch('students/{student}/toggle-status', [StudentControllerNew::class, 'toggleStatus'])->name('students.toggle-status');
@@ -229,3 +238,5 @@ Route::get('/clear-log', function () {
     }
     return redirect()->back()->with('error', 'ملف Log غير موجود');
 })->name('clear.log');
+
+

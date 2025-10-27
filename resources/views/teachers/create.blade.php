@@ -92,7 +92,7 @@
                                     </div>
 
                                     <div class="col-md-4 mb-3">
-                                        <label class="form-label required">تاريخ الميلاد</label>
+                                        <label class="form-label ">تاريخ الميلاد</label>
                                         <input type="date" 
                                                class="form-control @error('birth_date') is-invalid @enderror" 
                                                name="birth_date" 
@@ -118,7 +118,7 @@
                                     </div>
 
                                     <div class="col-md-4 mb-3">
-                                        <label class="form-label required">الجنسية</label>
+                                        <label class="form-label ">الجنسية</label>
                                         <input type="text" 
                                                class="form-control @error('nationality') is-invalid @enderror" 
                                                name="nationality" 
@@ -192,7 +192,7 @@
                             <div class="card-body">
                                 <div class="row">
                                     <div class="col-md-4 mb-3">
-                                        <label class="form-label required">الرقم الوظيفي</label>
+                                        <label class="form-label ">الرقم الوظيفي</label>
                                         <input type="text" 
                                                class="form-control @error('employee_number') is-invalid @enderror" 
                                                name="employee_number" 
@@ -221,7 +221,7 @@
                                     </div>
 
                                     <div class="col-md-4 mb-3">
-                                        <label class="form-label required">التخصص</label>
+                                        <label class="form-label ">التخصص</label>
                                         <input type="text" 
                                                class="form-control @error('specialization') is-invalid @enderror" 
                                                name="specialization" 
@@ -234,7 +234,7 @@
                                     </div>
 
                                     <div class="col-md-4 mb-3">
-                                        <label class="form-label required">المؤهل العلمي</label>
+                                        <label class="form-label ">المؤهل العلمي</label>
                                         <select class="form-select @error('qualification') is-invalid @enderror" 
                                                 name="qualification" 
                                                 required>
@@ -250,7 +250,7 @@
                                     </div>
 
                                     <div class="col-md-4 mb-3">
-                                        <label class="form-label required">تاريخ التعيين</label>
+                                        <label class="form-label ">تاريخ التعيين</label>
                                         <input type="date" 
                                                class="form-control @error('hire_date') is-invalid @enderror" 
                                                name="hire_date" 
@@ -262,7 +262,7 @@
                                     </div>
 
                                     <div class="col-md-4 mb-3">
-                                        <label class="form-label required">نوع العقد</label>
+                                        <label class="form-label ">نوع العقد</label>
                                         <select class="form-select @error('contract_type') is-invalid @enderror" 
                                                 name="contract_type" 
                                                 required>

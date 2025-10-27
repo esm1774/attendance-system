@@ -93,22 +93,22 @@
                                     </div>
 
                                     <div class="col-md-4 mb-3">
-                                        <label class="form-label required">تاريخ الميلاد</label>
+                                        <label class="form-label ">تاريخ الميلاد</label>
                                         <input type="date" 
                                                class="form-control @error('birth_date') is-invalid @enderror" 
                                                name="birth_date" 
-                                               value="{{ old('birth_date', $teacher->birth_date->format('Y-m-d')) }}" 
-                                               required>
+                                               value="{{ optional($teacher->birth_date)->format('Y-m-d') }}" 
+                                               >
                                         @error('birth_date')
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
                                     </div>
 
                                     <div class="col-md-4 mb-3">
-                                        <label class="form-label required">الجنس</label>
+                                        <label class="form-label ">الجنس</label>
                                         <select class="form-select @error('gender') is-invalid @enderror" 
                                                 name="gender" 
-                                                required>
+                                                >
                                             <option value="">-- اختر الجنس --</option>
                                             <option value="male" {{ old('gender', $teacher->gender) == 'male' ? 'selected' : '' }}>ذكر</option>
                                             <option value="female" {{ old('gender', $teacher->gender) == 'female' ? 'selected' : '' }}>أنثى</option>
@@ -119,12 +119,12 @@
                                     </div>
 
                                     <div class="col-md-4 mb-3">
-                                        <label class="form-label required">الجنسية</label>
+                                        <label class="form-label ">الجنسية</label>
                                         <input type="text" 
                                                class="form-control @error('nationality') is-invalid @enderror" 
                                                name="nationality" 
                                                value="{{ old('nationality', $teacher->nationality) }}" 
-                                               required>
+                                               >
                                         @error('nationality')
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
@@ -193,22 +193,22 @@
                             <div class="card-body">
                                 <div class="row">
                                     <div class="col-md-4 mb-3">
-                                        <label class="form-label required">الرقم الوظيفي</label>
+                                        <label class="form-label ">الرقم الوظيفي</label>
                                         <input type="text" 
                                                class="form-control @error('employee_number') is-invalid @enderror" 
                                                name="employee_number" 
                                                value="{{ old('employee_number', $teacher->employee_number) }}" 
-                                               required>
+                                               >
                                         @error('employee_number')
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
                                     </div>
 
                                     <div class="col-md-4 mb-3">
-                                        <label class="form-label required">المدرسة</label>
+                                        <label class="form-label ">المدرسة</label>
                                         <select class="form-select @error('school_id') is-invalid @enderror" 
                                                 name="school_id" 
-                                                required>
+                                                >
                                             <option value="">-- اختر المدرسة --</option>
                                             @foreach($schools as $school)
                                                 <option value="{{ $school->id }}" {{ old('school_id', $teacher->school_id) == $school->id ? 'selected' : '' }}>
@@ -222,23 +222,23 @@
                                     </div>
 
                                     <div class="col-md-4 mb-3">
-                                        <label class="form-label required">التخصص</label>
+                                        <label class="form-label ">التخصص</label>
                                         <input type="text" 
                                                class="form-control @error('specialization') is-invalid @enderror" 
                                                name="specialization" 
                                                value="{{ old('specialization', $teacher->specialization) }}" 
                                                placeholder="مثال: رياضيات، لغة عربية"
-                                               required>
+                                               >
                                         @error('specialization')
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
                                     </div>
 
                                     <div class="col-md-4 mb-3">
-                                        <label class="form-label required">المؤهل العلمي</label>
+                                        <label class="form-label ">المؤهل العلمي</label>
                                         <select class="form-select @error('qualification') is-invalid @enderror" 
                                                 name="qualification" 
-                                                required>
+                                                >
                                             <option value="">-- اختر المؤهل --</option>
                                             <option value="دبلوم" {{ old('qualification', $teacher->qualification) == 'دبلوم' ? 'selected' : '' }}>دبلوم</option>
                                             <option value="بكالوريوس" {{ old('qualification', $teacher->qualification) == 'بكالوريوس' ? 'selected' : '' }}>بكالوريوس</option>
@@ -251,22 +251,23 @@
                                     </div>
 
                                     <div class="col-md-4 mb-3">
-                                        <label class="form-label required">تاريخ التعيين</label>
+                                        <label class="form-label ">تاريخ التعيين</label>
                                         <input type="date" 
                                                class="form-control @error('hire_date') is-invalid @enderror" 
                                                name="hire_date" 
-                                               value="{{ old('hire_date', $teacher->hire_date->format('Y-m-d')) }}" 
-                                               required>
+                                               value="{{ optional($teacher->hire_date)->format('Y-m-d') }}"
+
+                                               >
                                         @error('hire_date')
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
                                     </div>
 
                                     <div class="col-md-4 mb-3">
-                                        <label class="form-label required">نوع العقد</label>
+                                        <label class="form-label ">نوع العقد</label>
                                         <select class="form-select @error('contract_type') is-invalid @enderror" 
                                                 name="contract_type" 
-                                                required>
+                                                >
                                             <option value="">-- اختر نوع العقد --</option>
                                             <option value="permanent" {{ old('contract_type', $teacher->contract_type) == 'permanent' ? 'selected' : '' }}>دائم</option>
                                             <option value="temporary" {{ old('contract_type', $teacher->contract_type) == 'temporary' ? 'selected' : '' }}>مؤقت</option>
@@ -416,10 +417,10 @@
                             <div class="card-body">
                                 <div class="row">
                                     <div class="col-md-6 mb-3">
-                                        <label class="form-label required">الحالة</label>
+                                        <label class="form-label ">الحالة</label>
                                         <select class="form-select @error('status') is-invalid @enderror" 
                                                 name="status" 
-                                                required>
+                                                >
                                             <option value="active" {{ old('status', $teacher->status) == 'active' ? 'selected' : '' }}>نشط</option>
                                             <option value="on_leave" {{ old('status', $teacher->status) == 'on_leave' ? 'selected' : '' }}>في إجازة</option>
                                             <option value="retired" {{ old('status', $teacher->status) == 'retired' ? 'selected' : '' }}>متقاعد</option>
